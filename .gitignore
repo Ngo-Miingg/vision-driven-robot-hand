@@ -30,3 +30,15 @@ build/
 *.bin
 *.hex
 *.map
+
+# Poster workspace artifacts
+poster/*.pdf
+poster/*.pptx
+poster/Poster_Khung_preview*.png
+poster/_tmp_build_*/
+poster/_ppt_export_png/
+poster/_build_poster_*.py
+
+# Keep only selected showcase images in git
+!poster/robot_hand_poster_khung_final.png
+!poster/dashboard_capture_hd.png

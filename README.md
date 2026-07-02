@@ -22,6 +22,14 @@
   <img src="poster/robot_hand_poster_khung_final.png" alt="Vision-Driven Robot Hand Poster" width="82%" />
 </p>
 
+<p>
+  <b>Camera sees.</b>
+  <b>PC interprets.</b>
+  <b>ESP32 relays.</b>
+  <b>Arduino executes.</b>
+  <b>Robot hand moves.</b>
+</p>
+
 </div>
 
 ## Table Of Contents
@@ -56,6 +64,17 @@
 | Safety-first workflow | Có `ARM`, `DISARM`, `ESTOP`, link test và preview an toàn |
 | Embedded-friendly protocol | Binary packet 8 byte gọn, dễ kiểm tra checksum, dễ debug |
 | Demo-ready | Có sẵn script cho setup, link test, preview và realtime run |
+
+### Demo trực quan
+
+| Poster tổng quan | Dashboard điều khiển |
+| --- | --- |
+| <img src="poster/robot_hand_poster_khung_final.png" alt="Project Poster" width="100%" /> | <img src="poster/dashboard_capture_hd.png" alt="Dashboard Demo" width="100%" /> |
+
+Hai hình trên thể hiện rõ hai mặt quan trọng nhất của dự án:
+
+- Bức tranh hệ thống tổng thể từ AI đến actuator thật
+- Giao diện vận hành thực tế dùng để điều khiển, test và demo
 
 ### Tech Stack
 
@@ -404,6 +423,17 @@ This is not just a vision demo. It is an end-to-end deployment pipeline covering
 | Embedded-friendly protocol | Uses a compact fixed 8-byte binary packet |
 | Demo-ready workflow | Includes scripts for setup, testing, preview, and realtime operation |
 
+### Visual Preview
+
+| System Poster | Control Dashboard |
+| --- | --- |
+| <img src="poster/robot_hand_poster_khung_final.png" alt="Project Poster" width="100%" /> | <img src="poster/dashboard_capture_hd.png" alt="Dashboard Demo" width="100%" /> |
+
+These two visuals quickly communicate the project's value:
+
+- a complete AI-to-hardware control story
+- a practical operator-facing dashboard for real demonstrations
+
 ### System Capability
 
 | Component | Current capability |
@@ -721,6 +751,8 @@ This project shows a complete AIoT deployment chain from perception to protocol 
 - Handover notes: [`HANDOVER.md`](HANDOVER.md)
 - Hardware checklist: [`HARDWARE_CHECKLIST.md`](HARDWARE_CHECKLIST.md)
 - Known issues: [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md)
+- Poster image: [`poster/robot_hand_poster_khung_final.png`](poster/robot_hand_poster_khung_final.png)
+- Dashboard screenshot: [`poster/dashboard_capture_hd.png`](poster/dashboard_capture_hd.png)
 
 
 ## License
