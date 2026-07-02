@@ -1,42 +1,65 @@
-# VISION-DRIVEN ROBOT HAND
+<div align="center">
 
-> A realtime AIoT robot-hand system where human hand motion is transformed into live motion on a physical tendon-driven robotic hand.
+# Vision-Driven Robot Hand
 
-![Showcase Poster](poster/robot_hand_poster_khung_final.png)
+### A realtime AIoT system where human hand motion becomes live motion on a physical robotic hand
 
-## Project Statement
+<p>
+  <img src="https://img.shields.io/badge/AI-Computer%20Vision-blueviolet?style=for-the-badge" alt="AI Computer Vision" />
+  <img src="https://img.shields.io/badge/Control-Realtime-success?style=for-the-badge" alt="Realtime Control" />
+  <img src="https://img.shields.io/badge/Hardware-5%20Servos-red?style=for-the-badge" alt="5 Servos" />
+  <img src="https://img.shields.io/badge/Embedded-ESP32%20%2B%20Arduino-orange?style=for-the-badge" alt="ESP32 and Arduino" />
+</p>
 
-This project is built around a simple but powerful idea:
+<p>
+  <img src="poster/robot_hand_poster_khung_final.png" alt="Vision-Driven Robot Hand Poster" width="84%" />
+</p>
 
-**A camera sees a human hand. An AI-assisted control pipeline interprets that motion. A physical robot hand mirrors it in realtime.**
+<p>
+  <b>Camera sees.</b>
+  <b>PC interprets.</b>
+  <b>ESP32 relays.</b>
+  <b>Arduino executes.</b>
+  <b>Robot hand moves.</b>
+</p>
 
-That means this repository is not just about vision, and not just about embedded code.
+</div>
 
-It is about connecting:
+## Project In One Sentence
 
-- perception
-- calibration
-- communication
-- safety
-- actuation
+`Vision-Driven Robot Hand` is a full-stack AIoT robotics project that captures human hand motion from camera input, translates it into compact control packets, and drives a real 5-servo tendon-based robotic hand in realtime.
 
-into one working hardware system.
+## Why This Project Stands Out
 
-## Why It Feels Strong As A Project
+Many vision projects stop at detection.
 
-Many AI projects stop at detection.
+Many embedded projects stop at manual actuation.
 
-Many embedded projects stop at manual control.
+This project pushes all the way through the full system chain:
 
-This one pushes through both boundaries:
+- perception from live camera input
+- pose-to-servo translation
+- browser and PC-based operator control
+- realtime packet transport
+- embedded bridging
+- physical actuator execution
 
-- It reads real visual input from camera.
-- It maps pose to robot motion.
-- It streams compact binary control packets.
-- It bridges high-level control to low-level actuation.
-- It moves a real tendon-driven hand, not a simulation.
+That end-to-end continuity is what gives the project real engineering weight.
+
+## Quick Facts
+
+| Item | Value |
+| --- | --- |
+| Core idea | Human hand motion mirrored by a real robot hand |
+| Realtime transport | WebSocket -> ESP32 -> UART -> Arduino Uno |
+| Actuation | 5-servo tendon-driven hand |
+| Input modes | Computer vision, dashboard, voice command |
+| Safety model | `ARM`, `DISARM`, `ESTOP`, link-first workflow |
+| Control payload | Fixed 8-byte binary packet |
 
 ## The Core Experience
+
+This is the moment the project is built around:
 
 ```text
 Your hand moves
@@ -47,9 +70,9 @@ Your hand moves
 -> the robot hand responds
 ```
 
-That direct cause-and-effect is the heart of the demo.
+That direct cause-and-effect is what makes the demo memorable.
 
-## Live Control Pipeline
+## Full Live Pipeline
 
 ```text
 Camera / Voice / Dashboard
@@ -61,66 +84,68 @@ Camera / Voice / Dashboard
 -> 5-servo tendon-driven robot hand
 ```
 
-## What The System Can Do
+## System Personality
 
-| Area | Capability |
-| --- | --- |
-| Hand control | Open, close, grip percentage, direct servo commands |
-| Vision pipeline | Hand tracking, preview, calibration, realtime send |
-| Operator control | Dashboard for connect, arm, disarm, estop, and manual control |
-| Voice control | Basic command phrases for core actions |
-| Communication | WebSocket to ESP32, UART to Uno, binary packet protocol |
-| Testing | Link test and staged verification before live motion |
+This repository feels strong because it does not pretend hardware is simple.
 
-## Engineering Character
+It acknowledges that:
 
-This repository has a strong engineering identity because it respects the realities of hardware:
-
-- signals can fail
+- communication can fail
 - power can sag
-- calibration can drift
-- browsers are not always safe transport layers
-- servos are physical devices, not clean digital abstractions
+- servo motion can be unstable
+- browser transport is not always enough on its own
+- calibration is part of the real system, not an afterthought
 
-That is why the system includes:
+That is why the project includes:
 
 - `ARM`
 - `DISARM`
 - `ESTOP`
-- dry-run and preview workflows
-- link-first debugging
+- preview-before-live workflow
+- link testing before CV blaming
 - fixed calibration references
 
-## Layered Architecture
+## What The System Can Do
 
-### CV Layer
+| Area | Capability |
+| --- | --- |
+| Vision pipeline | Hand skeleton tracking, calibration, preview, realtime send |
+| Hand control | Open, close, grip percentage, direct servo commands |
+| Dashboard operation | Connect, arm, disarm, estop, grip, manual control |
+| Voice control | Basic spoken actions for key commands |
+| Communication | Compact binary control packets over WebSocket and UART |
+| Verification | Link test and staged validation before live motion |
 
-The PC-side client handles camera input, pose interpretation, preview, and realtime packet emission.
+## Showcase Architecture
+
+### 1. Perception Layer
+
+The PC client reads camera input, tracks hand pose, previews the interpretation, and decides when live control data should be sent.
 
 Main file:
 
 - [`pc_client/cv_sender_template.py`](pc_client/cv_sender_template.py)
 
-### Dashboard Layer
+### 2. Operator Layer
 
-The dashboard is the operator-facing control surface for safe manual interaction and demo flow.
+The operator dashboard provides direct control when you want deterministic behavior, quick testing, or a cleaner demo flow.
 
 Main files:
 
 - [`web_client/master_control.html`](web_client/master_control.html)
 - [`web_client/master_control_server.py`](web_client/master_control_server.py)
 
-### ESP32 Bridge Layer
+### 3. Transport Layer
 
-ESP32 acts as the wireless bridge between high-level control and low-level serial transport.
+ESP32 acts as the wireless transport bridge between high-level control and low-level serial communication.
 
 Firmware:
 
 - [`firmware/esp32_ws_bridge/esp32_robot_hand_ws_bridge/esp32_robot_hand_ws_bridge.ino`](firmware/esp32_ws_bridge/esp32_robot_hand_ws_bridge/esp32_robot_hand_ws_bridge.ino)
 
-### Arduino Actuator Layer
+### 4. Actuation Layer
 
-Arduino Uno is the final actuator controller. It receives the packet and turns it into actual servo motion.
+Arduino Uno is the final execution node. It receives the packet, enforces runtime control state, and drives the servos.
 
 Firmware:
 
@@ -128,13 +153,13 @@ Firmware:
 
 ## Hardware Identity
 
-This robot hand uses:
+This build uses a compact but meaningful hardware stack:
 
 - 1 ESP32
 - 1 Arduino Uno
 - 1 MG90S
 - 4 MG996R
-- a dedicated high-current servo power supply
+- dedicated high-current servo power supply
 
 Servo mapping:
 
@@ -163,7 +188,7 @@ All grounds must be shared
 
 ## Locked Calibration
 
-These values define the hand's hard reference points and should stay synchronized across all control layers:
+These values define the hand's hard reference points and must remain synchronized across firmware, PC-side logic, and dashboard control.
 
 ```text
 OPEN  = {40, 180, 0,   0,   80}
@@ -172,7 +197,7 @@ CLOSE = {170, 0,   180, 180, 0}
 
 ## Binary Protocol
 
-The control path is intentionally compact.
+The control path is intentionally minimal and deterministic.
 
 ```text
 Byte 0: 0xAA
@@ -193,19 +218,26 @@ Modes:
 0x14 = CLOSE
 ```
 
-This matters because realtime actuator control benefits from predictable payload size and minimal parsing cost.
+This matters because realtime actuator control benefits from:
 
-## Safe Demo Sequence
+- predictable payload size
+- low parsing overhead
+- easy checksum validation
+- embedded-friendly transport behavior
 
-If you want the best live presentation flow, use this order:
+## Demo Choreography
 
-1. Show the hardware and explain the power rule.
-2. Show the communication pipeline.
+For the best live presentation, use this order:
+
+1. Show the hardware and power rule.
+2. Explain the communication pipeline.
 3. Run the link test.
 4. Open the dashboard and demonstrate direct servo control.
 5. Show CV preview mode.
 6. Run realtime hand mirroring.
-7. Finish with voice commands or grip presets.
+7. End with voice commands or grip presets.
+
+This gives the audience a clean progression from trust, to control, to intelligence.
 
 ## Quick Launch
 
@@ -217,7 +249,21 @@ If you want the best live presentation flow, use this order:
 .\run_realtime_cv.bat
 ```
 
-## Important Supporting Docs
+## Why It Matters As A Portfolio Project
+
+This is the kind of project that signals more than coding ability.
+
+It shows you can:
+
+- connect AI with real hardware
+- think in systems, not isolated scripts
+- design safety into physical control flows
+- structure multi-layer architecture clearly
+- build something that is both technically valid and demo-worthy
+
+That combination is rare, and it is exactly why this project feels strong.
+
+## Supporting Documents
 
 - [`README.md`](README.md)
 - [`QUICKSTART.md`](QUICKSTART.md)
@@ -230,6 +276,6 @@ If you want the best live presentation flow, use this order:
 
 ## Final Impression
 
-`Vision-Driven Robot Hand` stands out because it brings AI, robotics, embedded systems, and operator tooling into a single working realtime artifact.
+`Vision-Driven Robot Hand` stands out because it is not just a vision demo, not just a hardware prototype, and not just a dashboard project.
 
-It is a project that looks impressive in a portfolio, but more importantly, it demonstrates genuine systems integration discipline.
+It is a complete AIoT artifact where sensing, communication, safety, and motion come together in one realtime robotic system.
