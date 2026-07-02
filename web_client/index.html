@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Robot Hand Web Client</title>
+  <style>
+    :root {
+      --bg: #08111f;
+      --panel: rgba(12, 21, 37, 0.86);
+      --text: #eaf2ff;
+      --muted: #91a4c3;
+      --accent: #34d399;
+      --danger: #f87171;
+      --line: rgba(148, 163, 184, 0.2);
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(96, 165, 250, 0.24), transparent 30%),
+        radial-gradient(circle at top right, rgba(52, 211, 153, 0.18), transparent 25%),
+        linear-gradient(180deg, #060b14 0%, var(--bg) 100%);
+    }
+
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .hero {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 44px);
+      letter-spacing: 0.02em;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 760px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(15, 28, 49, 0.72);
+      box-shadow: var(--shadow);
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--danger);
+      box-shadow: 0 0 16px rgba(248, 113, 113, 0.55);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 20px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .row {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      color: #04111d;
+      font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(135deg, #dbeafe, #93c5fd);
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .danger { background: linear-gradient(135deg, #fecaca, #f87171); }
+    .success { background: linear-gradient(135deg, #bbf7d0, #34d399); }
+    .ghost { background: linear-gradient(135deg, #e5e7eb, #94a3b8); }
+
+    .connect {
+      display: grid;
+      gap: 10px;
+    }
+
+    .connect input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+    }
+
+    .slider-group {
+      display: grid;
+      gap: 12px;
+    }
+
+    .slider-card {
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .slider-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .footer-note {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <h1>Robot Hand Realtime Control</h1>
+      <p class="sub">Web UI này gửi binary packet 8 byte qua WebSocket tới ESP32, rồi ESP32 forward tiếp xuống Uno qua UART2.</p>
+      <div class="status" title="Trạng thái kết nối">
+        <span class="dot" id="statusDot"></span>
+        <strong id="statusText">Disconnected</strong>
+        <span id="statusUrl" style="color: var(--muted);">ws://192.168.4.1:81</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>Kết nối và lệnh</h2>
+        <div class="connect row">
+          <input id="wsUrl" value="ws://192.168.4.1:81" />
+          <div class="buttons">
+            <button class="success" id="btnConnect">Connect</button>
+            <button class="ghost" id="btnDisconnect">Disconnect</button>
+          </div>
+        </div>
+        <div class="buttons">
+          <button class="success" id="btnArm">ARM</button>
+          <button class="ghost" id="btnDisarm">DISARM</button>
+          <button class="danger" id="btnEstop">ESTOP</button>
+          <button id="btnOpen">OPEN</button>
+          <button id="btnClose">CLOSE</button>
+        </div>
+        <div class="row" style="margin-top: 18px;">
+          <div class="slider-card">
+            <div class="slider-head"><span>GRIP</span><span id="gripValue">50</span></div>
+            <input type="range" id="grip" min="0" max="100" value="50" />
+          </div>
+        </div>
+        <div class="footer-note">
+          Realtime dùng binary, không gửi JSON. Slider GRIP chỉ là giá trị 0..100 để map sang 5 góc servo theo calibration đã khóa.
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Direct angles</h2>
+        <div class="slider-group" id="angleSliders"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const WS_URL_DEFAULT = "ws://192.168.4.1:81";
+    const OPEN_ANGLE = [40, 180, 0, 0, 80];
+    const CLOSED_ANGLE = [170, 0, 180, 180, 0];
+    const LABELS = ["S0 thumb curl", "S1 index", "S2 middle", "S3 ring+pinky", "S4 thumb oppose"];
+    const LIMITS = [
+      [0, 170],
+      [0, 180],
+      [0, 180],
+      [0, 180],
+      [0, 80],
+    ];
+    const MODE_DIRECT = 0x01;
+    const MODE_GRIP = 0x02;
+    const MODE_ARM = 0x10;
+    const MODE_DISARM = 0x11;
+    const MODE_ESTOP = 0x12;
+    const MODE_OPEN = 0x13;
+    const MODE_CLOSE = 0x14;
+
+    let ws = null;
+    let connected = false;
+    const angles = [...OPEN_ANGLE];
+
+    const statusDot = document.getElementById("statusDot");
+    const statusText = document.getElementById("statusText");
+    const statusUrl = document.getElementById("statusUrl");
+    const wsUrlInput = document.getElementById("wsUrl");
+    const gripSlider = document.getElementById("grip");
+    const gripValue = document.getElementById("gripValue");
+    const angleSliders = document.getElementById("angleSliders");
+
+    function checksumXor(bytes) {
+      return bytes.reduce((acc, item) => acc ^ (item & 0xFF), 0);
+    }
+
+    function makePacket(mode, payload = []) {
+      const frame = new Uint8Array(8);
+      frame[0] = 0xAA;
+      frame[1] = mode & 0xFF;
+      for (let i = 0; i < 5 && i < payload.length; i++) {
+        frame[2 + i] = payload[i] & 0xFF;
+      }
+      frame[7] = checksumXor(Array.from(frame.slice(0, 7)));
+      return frame;
+    }
+
+    function sendPacket(mode, payload = []) {
+      if (!connected || !ws) {
+        return;
+      }
+      ws.send(makePacket(mode, payload));
+    }
+
+    function setStatus(ok, text) {
+      connected = ok;
+      statusText.textContent = text;
+      statusDot.style.background = ok ? "var(--accent)" : "var(--danger)";
+      statusDot.style.boxShadow = ok ? "0 0 16px rgba(52, 211, 153, 0.5)" : "0 0 16px rgba(248, 113, 113, 0.55)";
+    }
+
+    function connect() {
+      disconnect();
+      const url = wsUrlInput.value.trim() || WS_URL_DEFAULT;
+      statusUrl.textContent = url;
+      ws = new WebSocket(url);
+      ws.binaryType = "arraybuffer";
+      ws.onopen = () => setStatus(true, "Connected");
+      ws.onclose = () => setStatus(false, "Disconnected");
+      ws.onerror = () => setStatus(false, "Error");
+    }
+
+    function disconnect() {
+      if (ws) {
+        try { ws.close(); } catch (_) {}
+        ws = null;
+      }
+      setStatus(false, "Disconnected");
+    }
+
+    function renderSliders() {
+      angleSliders.innerHTML = "";
+      LABELS.forEach((label, index) => {
+        const card = document.createElement("div");
+        card.className = "slider-card";
+        const head = document.createElement("div");
+        head.className = "slider-head";
+        const title = document.createElement("span");
+        title.textContent = label;
+        const value = document.createElement("span");
+        value.id = `angleValue${index}`;
+        value.textContent = String(angles[index]);
+        head.appendChild(title);
+        head.appendChild(value);
+        const slider = document.createElement("input");
+        slider.type = "range";
+        slider.min = LIMITS[index][0];
+        slider.max = LIMITS[index][1];
+        slider.value = angles[index];
+        slider.addEventListener("input", () => {
+          angles[index] = Number(slider.value);
+          value.textContent = slider.value;
+          sendPacket(MODE_DIRECT, angles);
+        });
+        card.appendChild(head);
+        card.appendChild(slider);
+        angleSliders.appendChild(card);
+      });
+    }
+
+    function sendGrip() {
+      gripValue.textContent = gripSlider.value;
+      sendPacket(MODE_GRIP, [Number(gripSlider.value)]);
+    }
+
+    document.getElementById("btnConnect").addEventListener("click", connect);
+    document.getElementById("btnDisconnect").addEventListener("click", disconnect);
+    document.getElementById("btnArm").addEventListener("click", () => sendPacket(MODE_ARM));
+    document.getElementById("btnDisarm").addEventListener("click", () => sendPacket(MODE_DISARM));
+    document.getElementById("btnEstop").addEventListener("click", () => sendPacket(MODE_ESTOP));
+    document.getElementById("btnOpen").addEventListener("click", () => sendPacket(MODE_OPEN));
+    document.getElementById("btnClose").addEventListener("click", () => sendPacket(MODE_CLOSE));
+    gripSlider.addEventListener("input", sendGrip);
+    wsUrlInput.addEventListener("change", () => statusUrl.textContent = wsUrlInput.value.trim() || WS_URL_DEFAULT);
+
+    renderSliders();
+    gripValue.textContent = gripSlider.value;
+    setStatus(false, "Disconnected");
+    statusUrl.textContent = wsUrlInput.value.trim() || WS_URL_DEFAULT;
+  </script>
+</body>
+</html>

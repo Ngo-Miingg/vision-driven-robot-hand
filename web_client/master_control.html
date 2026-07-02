@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Robot Hand Master Control</title>
+  <style>
+    :root {
+      --bg: #eef3f0;
+      --ink: #17211d;
+      --muted: #65746d;
+      --panel: rgba(255, 255, 255, 0.82);
+      --panel-strong: #ffffff;
+      --line: #cbd8d1;
+      --green: #0f9f6e;
+      --green-soft: #dff7eb;
+      --amber: #b7791f;
+      --amber-soft: #fff2cc;
+      --red: #c7372f;
+      --red-soft: #ffe4e0;
+      --blue: #2768b5;
+      --blue-soft: #dcecff;
+      --steel: #25312d;
+      --shadow: 0 18px 48px rgba(47, 65, 56, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Segoe UI", "Be Vietnam Pro", Tahoma, sans-serif;
+      background:
+        linear-gradient(135deg, rgba(15, 159, 110, 0.13), transparent 34%),
+        linear-gradient(315deg, rgba(39, 104, 181, 0.13), transparent 36%),
+        var(--bg);
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 10px 13px;
+      font-weight: 750;
+      color: var(--ink);
+      background: var(--panel-strong);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(47, 65, 56, 0.12);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.52;
+      transform: none;
+      box-shadow: none;
+    }
+
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 11px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--green);
+    }
+
+    .shell {
+      width: min(1440px, calc(100vw - 28px));
+      margin: 0 auto;
+      padding: 18px 0 28px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(280px, 560px);
+      gap: 14px;
+      align-items: center;
+      padding: 14px 0 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      border-radius: 10px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--steel), #456056);
+      box-shadow: var(--shadow);
+      font-weight: 900;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 25px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .subline {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .connectbar {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.68);
+      box-shadow: var(--shadow);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1.05fr 0.95fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      overflow: hidden;
+    }
+
+    .panel > header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.58);
+    }
+
+    .panel h2 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .panel-body {
+      padding: 14px;
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      min-height: 72px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .metric b {
+      display: block;
+      margin-top: 5px;
+      font-size: 19px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.75);
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--red);
+      box-shadow: 0 0 0 4px rgba(199, 55, 47, 0.13);
+    }
+
+    .dot.ok {
+      background: var(--green);
+      box-shadow: 0 0 0 4px rgba(15, 159, 110, 0.13);
+    }
+
+    .dot.warn {
+      background: var(--amber);
+      box-shadow: 0 0 0 4px rgba(183, 121, 31, 0.14);
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .btn-green { background: var(--green-soft); border-color: #9cdec0; color: #07573c; }
+    .btn-red { background: var(--red-soft); border-color: #ffb5ad; color: #8d1f19; }
+    .btn-blue { background: var(--blue-soft); border-color: #a9cdf4; color: #164d87; }
+    .btn-amber { background: var(--amber-soft); border-color: #f1d181; color: #7a4d0e; }
+    .btn-dark { background: #26332e; border-color: #26332e; color: #fff; }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 12px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .servo-card {
+      display: grid;
+      grid-template-columns: 106px 1fr 44px;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.64);
+      margin-bottom: 9px;
+    }
+
+    .servo-name {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .servo-name b {
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .servo-name span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .servo-value {
+      text-align: right;
+      font-weight: 850;
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .voice-stage {
+      display: grid;
+      gap: 12px;
+    }
+
+    .meter {
+      position: relative;
+      height: 18px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.74);
+    }
+
+    .meter-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green), var(--amber), var(--red));
+      transition: width 0.08s linear;
+    }
+
+    .toggle-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 42px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.64);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .toggle input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--green);
+    }
+
+    .log {
+      height: 235px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(18, 26, 23, 0.92);
+      color: #dcebe4;
+      padding: 10px;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .kbd {
+      display: inline-flex;
+      min-width: 22px;
+      justify-content: center;
+      border: 1px solid var(--line);
+      border-bottom-width: 2px;
+      border-radius: 6px;
+      padding: 2px 6px;
+      color: var(--ink);
+      background: #fff;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .command-list {
+      display: grid;
+      gap: 8px;
+      max-height: 278px;
+      overflow: auto;
+    }
+
+    .command-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.62);
+      font-size: 12px;
+    }
+
+    .command-item b {
+      white-space: nowrap;
+    }
+
+    .command-item span {
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .manual-command {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .camera-stage {
+      display: grid;
+      gap: 10px;
+    }
+
+    .camera-view {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #111a17;
+      aspect-ratio: 16 / 9;
+    }
+
+    .camera-view video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: #111a17;
+    }
+
+    .camera-view.mirror video {
+      transform: scaleX(-1);
+    }
+
+    .camera-overlay {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .camera-overlay span {
+      border-radius: 999px;
+      padding: 5px 8px;
+      color: #eaf6f0;
+      background: rgba(17, 26, 23, 0.72);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 1180px) {
+      .layout {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .layout .panel:last-child {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .shell {
+        width: min(100vw - 18px, 720px);
+      }
+
+      .topbar, .connectbar, .layout, .status-strip, .actions, .grid2, .toggle-row {
+        grid-template-columns: 1fr;
+      }
+
+      .servo-card {
+        grid-template-columns: 1fr 46px;
+      }
+
+      .servo-card input[type="range"] {
+        grid-column: 1 / -1;
+      }
+
+      .preset-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="topbar">
+      <div class="brand">
+        <div class="mark">RH</div>
+        <div>
+          <h1>Robot Hand Master Control</h1>
+          <div class="subline" id="lastCommand">Ready</div>
+        </div>
+      </div>
+
+      <div class="connectbar">
+        <input id="wsUrl" type="text" value="/api/send" />
+        <button id="btnConnect" class="btn-green">Connect</button>
+        <button id="btnDisconnect">Disconnect</button>
+      </div>
+    </section>
+
+    <section class="status-strip">
+      <div class="metric">
+        <span>WebSocket</span>
+        <b id="wsState"><span class="dot" id="wsDot"></span> Offline</b>
+      </div>
+      <div class="metric">
+        <span>ARM</span>
+        <b id="armState">DISARMED</b>
+      </div>
+      <div class="metric">
+        <span>Voice</span>
+        <b id="voiceState"><span class="dot" id="voiceDot"></span> Idle</b>
+      </div>
+      <div class="metric">
+        <span>Packet</span>
+        <b id="packetCount">0</b>
+      </div>
+    </section>
+
+    <section class="layout">
+      <article class="panel">
+        <header>
+          <h2>Core Control</h2>
+          <span class="pill"><span class="dot" id="safetyDot"></span><span id="safetyText">Locked</span></span>
+        </header>
+        <div class="panel-body">
+          <div class="actions">
+            <button id="btnArm" class="btn-green">ARM</button>
+            <button id="btnDisarm">DISARM</button>
+            <button id="btnOpen" class="btn-blue">OPEN</button>
+            <button id="btnClose" class="btn-amber">CLOSE</button>
+            <button id="btnEstop" class="btn-red">ESTOP</button>
+          </div>
+
+          <div class="field" style="margin-top: 16px;">
+            <label for="gripSlider">Grip percent</label>
+            <input id="gripSlider" type="range" min="0" max="100" value="0" />
+            <input id="gripNumber" type="number" min="0" max="100" value="0" />
+          </div>
+
+          <div class="preset-grid">
+            <button data-grip="0">Grip 0</button>
+            <button data-grip="25">Grip 25</button>
+            <button data-grip="50">Grip 50</button>
+            <button data-grip="75">Grip 75</button>
+            <button data-grip="100" class="btn-amber">Grip 100</button>
+            <button id="btnHold" class="btn-dark">HOLD</button>
+          </div>
+
+          <div class="grid2" style="margin-top: 16px;">
+            <div class="field">
+              <label for="sendHz">Send throttle</label>
+              <select id="sendHz">
+                <option value="0">Instant</option>
+                <option value="20">20 Hz</option>
+                <option value="35" selected>35 Hz</option>
+                <option value="50">50 Hz</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="deadband">Deadband</label>
+              <select id="deadband">
+                <option value="0">0 deg</option>
+                <option value="1" selected>1 deg</option>
+                <option value="2">2 deg</option>
+                <option value="3">3 deg</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <header>
+          <h2>Servo Direct</h2>
+          <span class="pill" id="angleSummary">40 180 0 0 80</span>
+        </header>
+        <div class="panel-body">
+          <div id="servoList"></div>
+          <div class="preset-grid">
+            <button id="btnDirectOpen">Direct OPEN</button>
+            <button id="btnDirectMid">Direct MID</button>
+            <button id="btnDirectClose" class="btn-amber">Direct CLOSE</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <header>
+          <h2>Realtime Camera</h2>
+          <span class="pill"><span class="dot" id="cameraDot"></span><span id="cameraState">Off</span></span>
+        </header>
+        <div class="panel-body camera-stage">
+          <div class="camera-view mirror" id="cameraView">
+            <video id="cameraVideo" autoplay muted playsinline></video>
+            <div class="camera-overlay">
+              <span id="cameraInfo">No camera</span>
+              <span id="cameraFps">0 FPS</span>
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label for="cameraSelect">Camera source</label>
+              <select id="cameraSelect"></select>
+            </div>
+            <div class="field">
+              <label for="cameraQuality">Quality</label>
+              <select id="cameraQuality">
+                <option value="640x360" selected>640 x 360</option>
+                <option value="854x480">854 x 480</option>
+                <option value="1280x720">1280 x 720</option>
+              </select>
+            </div>
+          </div>
+          <div class="actions" style="grid-template-columns: repeat(3, 1fr);">
+            <button id="btnCameraStart" class="btn-green">Cam ON</button>
+            <button id="btnCameraStop">Cam OFF</button>
+            <button id="btnCameraRefresh" class="btn-blue">Refresh</button>
+          </div>
+          <label class="toggle"><input id="cameraMirror" type="checkbox" checked /> Mirror preview</label>
+        </div>
+      </article>
+
+      <article class="panel">
+        <header>
+          <h2>Voice Command</h2>
+          <span class="pill"><span class="dot warn" id="noiseDot"></span><span id="noiseLabel">Noise idle</span></span>
+        </header>
+        <div class="panel-body voice-stage">
+          <div class="actions" style="grid-template-columns: repeat(3, 1fr);">
+            <button id="btnVoiceStart" class="btn-green">Mic ON</button>
+            <button id="btnVoiceStop">Mic OFF</button>
+            <button id="btnCalNoise" class="btn-blue">Cal Noise</button>
+          </div>
+
+          <div class="meter"><div class="meter-fill" id="meterFill"></div></div>
+
+          <div class="grid2">
+            <div class="field">
+              <label for="confidenceGate">Confidence gate</label>
+              <input id="confidenceGate" type="range" min="0" max="0.9" step="0.05" value="0.35" />
+            </div>
+            <div class="field">
+              <label for="noiseGate">Noise gate</label>
+              <input id="noiseGate" type="range" min="0.005" max="0.15" step="0.005" value="0.035" />
+            </div>
+          </div>
+
+          <div class="toggle-row">
+            <label class="toggle"><input id="wakeWordToggle" type="checkbox" checked /> Wake word</label>
+            <label class="toggle"><input id="confirmDangerToggle" type="checkbox" checked /> Confirm ESTOP</label>
+          </div>
+
+          <div class="manual-command">
+            <input id="manualVoiceText" type="text" placeholder="robot mở tay" />
+            <button id="btnRunText" class="btn-blue">Run</button>
+          </div>
+
+          <div class="log" id="voiceLog"></div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <header>
+          <h2>Voice Map</h2>
+          <span class="pill"><span class="kbd">Space</span> PTT</span>
+        </header>
+        <div class="panel-body">
+          <div class="command-list" id="commandList"></div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const WS_URL_DEFAULT = "/api/send";
+    const OPEN_ANGLE = [40, 180, 0, 0, 80];
+    const CLOSED_ANGLE = [170, 0, 180, 180, 0];
+    const SERVO_LABELS = [
+      ["S0", "thumb curl", "ngón cái gập"],
+      ["S1", "index", "ngón trỏ"],
+      ["S2", "middle", "ngón giữa"],
+      ["S3", "ring+pinky", "áp út + út"],
+      ["S4", "thumb oppose", "ngón cái oppose"],
+    ];
+    const LIMITS = [[0, 170], [0, 180], [0, 180], [0, 180], [0, 80]];
+    const MODES = {
+      DIRECT: 0x01,
+      GRIP: 0x02,
+      ARM: 0x10,
+      DISARM: 0x11,
+      ESTOP: 0x12,
+      OPEN: 0x13,
+      CLOSE: 0x14,
+    };
+    const COMMAND_HELP = [
+      ["robot arm", "ARM servo"],
+      ["robot disarm", "DISARM servo"],
+      ["robot mở tay", "OPEN"],
+      ["robot nắm tay", "CLOSE"],
+      ["robot dừng khẩn cấp", "ESTOP"],
+      ["robot grip 50", "GRIP percent"],
+      ["robot mở ngón trỏ", "S1 về OPEN"],
+      ["robot đóng ngón giữa", "S2 về CLOSE"],
+      ["robot ngón cái 60", "đặt servo ngón cái theo %"],
+      ["robot hold", "giữ góc hiện tại"],
+    ];
+
+    let ws = null;
+    let connected = false;
+    let connecting = false;
+    let httpBridge = false;
+    let httpSendUrl = WS_URL_DEFAULT;
+    let armed = false;
+    let packetCount = 0;
+    let currentAngles = [...OPEN_ANGLE];
+    let lastSentAngles = null;
+    let lastSendAt = 0;
+    let pendingAngles = null;
+    let flushTimer = null;
+    let audioContext = null;
+    let analyser = null;
+    let micStream = null;
+    let meterTimer = null;
+    let recognition = null;
+    let listening = false;
+    let voiceReadyUntil = 0;
+    let noiseFloor = 0.015;
+    let lastCommandKey = "";
+    let lastCommandAt = 0;
+    let awaitingEstopConfirm = false;
+    let cameraStream = null;
+    let cameraFpsTimer = null;
+    let cameraFrameTimer = null;
+    let cameraFrameCount = 0;
+    let cameraLastFrameCount = 0;
+
+    const $ = (id) => document.getElementById(id);
+
+    function checksumXor(bytes) {
+      return bytes.reduce((acc, value) => acc ^ (value & 0xff), 0);
+    }
+
+    function makePacket(mode, payload = []) {
+      const frame = new Uint8Array(8);
+      frame[0] = 0xaa;
+      frame[1] = mode & 0xff;
+      for (let i = 0; i < Math.min(5, payload.length); i++) {
+        frame[2 + i] = Math.max(0, Math.min(255, Math.round(payload[i]))) & 0xff;
+      }
+      frame[7] = checksumXor(Array.from(frame.slice(0, 7)));
+      return frame;
+    }
+
+    function log(message, tone = "info") {
+      const now = new Date().toLocaleTimeString();
+      const line = document.createElement("div");
+      line.textContent = `[${now}] ${message}`;
+      if (tone === "bad") line.style.color = "#ffb1aa";
+      if (tone === "ok") line.style.color = "#a9f5cd";
+      if (tone === "warn") line.style.color = "#ffe08a";
+      $("voiceLog").prepend(line);
+    }
+
+    function setLastCommand(text) {
+      $("lastCommand").textContent = text;
+    }
+
+    function updateConnectionUi() {
+      const stateClass = connected ? "dot ok" : (connecting ? "dot warn" : "dot");
+      const stateText = connected ? "Online" : (connecting ? "Connecting" : "Offline");
+      $("wsDot").className = stateClass;
+      $("wsState").innerHTML = `<span class="${stateClass}"></span> ${stateText}`;
+      $("armState").textContent = armed ? "ARMED" : "DISARMED";
+      $("safetyDot").className = armed ? "dot ok" : "dot";
+      $("safetyText").textContent = armed ? "Live" : "Locked";
+      $("packetCount").textContent = String(packetCount);
+    }
+
+    function sendPacket(mode, payload = [], label = "packet") {
+      if (httpBridge) {
+        sendHttpPacket(mode, payload, label);
+        return true;
+      }
+      if (!connected || !ws || ws.readyState !== WebSocket.OPEN) {
+        log(`WS offline: ${label}`, "warn");
+        return false;
+      }
+      ws.send(makePacket(mode, payload));
+      packetCount += 1;
+      setLastCommand(label);
+      updateConnectionUi();
+      return true;
+    }
+
+    async function sendHttpPacket(mode, payload = [], label = "packet") {
+      if (!connected) {
+        log(`Bridge offline: ${label}`, "warn");
+        return;
+      }
+      try {
+        const response = await fetch(httpSendUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode, payload }),
+        });
+        const result = await response.json();
+        if (!response.ok || !result.ok) {
+          connected = false;
+          armed = false;
+          log(`Bridge send failed: ${result.error || response.statusText}`, "bad");
+          updateConnectionUi();
+          return;
+        }
+        packetCount += 1;
+        setLastCommand(label);
+        updateConnectionUi();
+      } catch (error) {
+        connected = false;
+        armed = false;
+        log(`Bridge HTTP error: ${error.message}`, "bad");
+        updateConnectionUi();
+      }
+    }
+
+    async function connect() {
+      disconnect(false);
+      const url = $("wsUrl").value.trim() || WS_URL_DEFAULT;
+      if (url.startsWith("/") || url.startsWith("http://") || url.startsWith("https://")) {
+        httpBridge = true;
+        httpSendUrl = new URL(url, window.location.href).href;
+        connecting = true;
+        updateConnectionUi();
+        log(`Checking HTTP bridge ${httpSendUrl}`, "warn");
+        try {
+          const statusUrl = httpSendUrl.replace(/\/api\/send\/?$/, "/api/status?connect=1");
+          const response = await fetch(statusUrl, { cache: "no-store" });
+          const result = await response.json();
+          connected = Boolean(response.ok && result.ok);
+          connecting = false;
+          log(connected ? `HTTP bridge ready -> ${result.esp_url}` : "HTTP bridge not ready", connected ? "ok" : "bad");
+          updateConnectionUi();
+        } catch (error) {
+          connected = false;
+          connecting = false;
+          log(`HTTP bridge error: ${error.message}`, "bad");
+          updateConnectionUi();
+        }
+        return;
+      }
+      httpBridge = false;
+      connecting = true;
+      updateConnectionUi();
+      log(`Connecting ${url}`, "warn");
+      try {
+        ws = new WebSocket(url);
+      } catch (error) {
+        connecting = false;
+        log(`Invalid WebSocket URL: ${error.message}`, "bad");
+        updateConnectionUi();
+        return;
+      }
+      ws.binaryType = "arraybuffer";
+      ws.onopen = () => {
+        connected = true;
+        connecting = false;
+        log(`Connected ${url}`, "ok");
+        updateConnectionUi();
+      };
+      ws.onclose = (event) => {
+        connected = false;
+        connecting = false;
+        armed = false;
+        const detail = event.code ? ` code=${event.code}` : "";
+        log(`Disconnected${detail}`, "warn");
+        updateConnectionUi();
+      };
+      ws.onerror = () => {
+        connected = false;
+        connecting = false;
+        log("WebSocket error. Check PC Wi-Fi is RobotHand_ESP32 and ESP32 log shows WS PORT 81.", "bad");
+        updateConnectionUi();
+      };
+    }
+
+    function disconnect(writeLog = true) {
+      if (ws) {
+        try { ws.close(); } catch (_) {}
+      }
+      ws = null;
+      connected = false;
+      connecting = false;
+      httpBridge = false;
+      armed = false;
+      if (writeLog) log("Manual disconnect", "warn");
+      updateConnectionUi();
+    }
+
+    function sendControl(name) {
+      const mode = MODES[name];
+      if (sendPacket(mode, [], name)) {
+        if (name === "ARM") armed = true;
+        if (["DISARM", "ESTOP"].includes(name)) armed = false;
+        updateConnectionUi();
+      }
+    }
+
+    function anglesFromGrip(percent) {
+      const ratio = Math.max(0, Math.min(100, Number(percent))) / 100;
+      return OPEN_ANGLE.map((open, i) => Math.round(open + (CLOSED_ANGLE[i] - open) * ratio));
+    }
+
+    function shouldSendAngles(nextAngles) {
+      const deadband = Number($("deadband").value);
+      if (!lastSentAngles) return true;
+      return nextAngles.some((value, index) => Math.abs(value - lastSentAngles[index]) > deadband);
+    }
+
+    function sendAngles(nextAngles, label = "DIRECT") {
+      currentAngles = nextAngles.map((value, index) => {
+        const [low, high] = LIMITS[index];
+        return Math.max(low, Math.min(high, Math.round(value)));
+      });
+      renderServoValues();
+
+      if (!shouldSendAngles(currentAngles)) return;
+
+      const hz = Number($("sendHz").value);
+      const now = performance.now();
+      if (hz <= 0 || now - lastSendAt >= 1000 / hz) {
+        if (sendPacket(MODES.DIRECT, currentAngles, `${label}: ${currentAngles.join(" ")}`)) {
+          lastSentAngles = [...currentAngles];
+          lastSendAt = now;
+        }
+        return;
+      }
+
+      pendingAngles = [...currentAngles];
+      if (!flushTimer) {
+        flushTimer = setTimeout(() => {
+          flushTimer = null;
+          if (pendingAngles) {
+            const copy = pendingAngles;
+            pendingAngles = null;
+            sendAngles(copy, label);
+          }
+        }, Math.max(1, (1000 / hz) - (now - lastSendAt)));
+      }
+    }
+
+    function sendGrip(percent) {
+      const value = Math.max(0, Math.min(100, Math.round(Number(percent))));
+      $("gripSlider").value = value;
+      $("gripNumber").value = value;
+      if (sendPacket(MODES.GRIP, [value], `GRIP ${value}`)) {
+        currentAngles = anglesFromGrip(value);
+        renderServoValues();
+      }
+    }
+
+    function setServoPercent(index, percent) {
+      const ratio = Math.max(0, Math.min(100, Number(percent))) / 100;
+      const next = [...currentAngles];
+      next[index] = Math.round(OPEN_ANGLE[index] + (CLOSED_ANGLE[index] - OPEN_ANGLE[index]) * ratio);
+      sendAngles(next, `${SERVO_LABELS[index][0]} ${percent}%`);
+    }
+
+    function renderServoControls() {
+      $("servoList").innerHTML = "";
+      SERVO_LABELS.forEach((servo, index) => {
+        const card = document.createElement("div");
+        card.className = "servo-card";
+        card.innerHTML = `
+          <div class="servo-name">
+            <b>${servo[0]} ${servo[1]}</b>
+            <span>${servo[2]}</span>
+          </div>
+          <input id="servo${index}" type="range" min="${LIMITS[index][0]}" max="${LIMITS[index][1]}" value="${currentAngles[index]}" />
+          <div class="servo-value" id="servoValue${index}">${currentAngles[index]}</div>
+        `;
+        $("servoList").appendChild(card);
+        $(`servo${index}`).addEventListener("input", (event) => {
+          const next = [...currentAngles];
+          next[index] = Number(event.target.value);
+          sendAngles(next, `${servo[0]} direct`);
+        });
+      });
+    }
+
+    function renderServoValues() {
+      currentAngles.forEach((value, index) => {
+        const slider = $(`servo${index}`);
+        const output = $(`servoValue${index}`);
+        if (slider) slider.value = value;
+        if (output) output.textContent = String(value);
+      });
+      $("angleSummary").textContent = currentAngles.join(" ");
+    }
+
+    function normalizeText(input) {
+      return input
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\u0111/g, "d")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function parseNumber(text) {
+      const digit = text.match(/\b(100|[0-9]{1,2})\b/);
+      if (digit) return Number(digit[1]);
+      const words = {
+        "khong": 0, "mot": 1, "hai": 2, "ba": 3, "bon": 4, "nam": 5,
+        "sau": 6, "bay": 7, "tam": 8, "chin": 9, "muoi": 10,
+        "hai muoi lam": 25, "nam muoi": 50, "bay muoi lam": 75, "mot tram": 100
+      };
+      for (const [word, value] of Object.entries(words)) {
+        if (text.includes(word)) return value;
+      }
+      return null;
+    }
+
+    function fingerIndexFromText(text) {
+      if (text.includes("ngon cai") || text.includes("thumb")) return text.includes("oppos") || text.includes("doi") ? 4 : 0;
+      if (text.includes("tro") || text.includes("index")) return 1;
+      if (text.includes("giua") || text.includes("middle")) return 2;
+      if (text.includes("ut") || text.includes("pinky") || text.includes("ap ut") || text.includes("ring")) return 3;
+      return null;
+    }
+
+    function runVoiceCommand(rawText, confidence = 1, fromManual = false) {
+      const gate = Number($("confidenceGate").value);
+      const normalized = normalizeText(rawText);
+      if (!normalized) return;
+
+      if (!fromManual && confidence < gate) {
+        log(`Low confidence ${confidence.toFixed(2)}: ${rawText}`, "warn");
+        return;
+      }
+
+      if (!fromManual && Date.now() > voiceReadyUntil) {
+        log(`Noise gate rejected: ${rawText}`, "warn");
+        return;
+      }
+
+      let text = normalized;
+      const wakeWordOn = $("wakeWordToggle").checked;
+      if (wakeWordOn) {
+        const wakeWords = ["robot", "ro bot", "ban tay", "tay may", "may"];
+        const wake = wakeWords.find((word) => text.includes(word));
+        if (!wake) {
+          log(`No wake word: ${rawText}`, "warn");
+          return;
+        }
+        text = text.replace(wake, "").trim();
+      }
+
+      const commandKey = `${text}:${Math.round(confidence * 100)}`;
+      const now = Date.now();
+      if (!fromManual && commandKey === lastCommandKey && now - lastCommandAt < 1200) return;
+      lastCommandKey = commandKey;
+      lastCommandAt = now;
+
+      if (text.includes("xac nhan dung") || text.includes("confirm stop")) {
+        awaitingEstopConfirm = false;
+        sendControl("ESTOP");
+        log("Voice: ESTOP confirmed", "bad");
+        return;
+      }
+
+      if (text.includes("dung khan") || text.includes("estop") || text.includes("emergency")) {
+        if ($("confirmDangerToggle").checked) {
+          awaitingEstopConfirm = true;
+          log("Say 'robot xác nhận dừng' to ESTOP", "warn");
+          return;
+        }
+        sendControl("ESTOP");
+        log("Voice: ESTOP", "bad");
+        return;
+      }
+
+      if (text.includes("arm") || text.includes("kich hoat") || text.includes("bat servo")) {
+        sendControl("ARM");
+        log("Voice: ARM", "ok");
+        return;
+      }
+
+      if (text.includes("disarm") || text.includes("tat servo") || text.includes("khoa")) {
+        sendControl("DISARM");
+        log("Voice: DISARM", "ok");
+        return;
+      }
+
+      if (text.includes("mo tay") || text === "mo" || text.includes("open")) {
+        sendControl("OPEN");
+        currentAngles = [...OPEN_ANGLE];
+        renderServoValues();
+        log("Voice: OPEN", "ok");
+        return;
+      }
+
+      if (text.includes("nam tay") || text.includes("dong tay") || text.includes("close") || text.includes("fist")) {
+        sendControl("CLOSE");
+        currentAngles = [...CLOSED_ANGLE];
+        renderServoValues();
+        log("Voice: CLOSE", "ok");
+        return;
+      }
+
+      if (text.includes("hold") || text.includes("giu")) {
+        log("Voice: HOLD", "ok");
+        setLastCommand("HOLD");
+        return;
+      }
+
+      if (text.includes("grip") || text.includes("kep") || text.includes("nam")) {
+        const value = parseNumber(text);
+        if (value !== null) {
+          sendGrip(value);
+          log(`Voice: GRIP ${value}`, "ok");
+          return;
+        }
+      }
+
+      const fingerIndex = fingerIndexFromText(text);
+      if (fingerIndex !== null) {
+        if (text.includes("mo")) {
+          const next = [...currentAngles];
+          next[fingerIndex] = OPEN_ANGLE[fingerIndex];
+          sendAngles(next, `${SERVO_LABELS[fingerIndex][0]} OPEN`);
+          log(`Voice: ${SERVO_LABELS[fingerIndex][0]} OPEN`, "ok");
+          return;
+        }
+        if (text.includes("dong") || text.includes("gap") || text.includes("nam")) {
+          const next = [...currentAngles];
+          next[fingerIndex] = CLOSED_ANGLE[fingerIndex];
+          sendAngles(next, `${SERVO_LABELS[fingerIndex][0]} CLOSE`);
+          log(`Voice: ${SERVO_LABELS[fingerIndex][0]} CLOSE`, "ok");
+          return;
+        }
+        const value = parseNumber(text);
+        if (value !== null) {
+          setServoPercent(fingerIndex, value);
+          log(`Voice: ${SERVO_LABELS[fingerIndex][0]} ${value}%`, "ok");
+          return;
+        }
+      }
+
+      log(`Unmapped: ${rawText}`, "warn");
+    }
+
+    async function startMicMeter() {
+      if (micStream) return;
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioContext.createMediaStreamSource(micStream);
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.72;
+      source.connect(analyser);
+      meterTimer = window.setInterval(updateMeter, 60);
+    }
+
+    function stopMicMeter() {
+      if (meterTimer) window.clearInterval(meterTimer);
+      meterTimer = null;
+      if (micStream) micStream.getTracks().forEach((track) => track.stop());
+      micStream = null;
+      if (audioContext) audioContext.close();
+      audioContext = null;
+      analyser = null;
+      $("meterFill").style.width = "0%";
+    }
+
+    function updateMeter() {
+      if (!analyser) return;
+      const data = new Float32Array(analyser.fftSize);
+      analyser.getFloatTimeDomainData(data);
+      let sum = 0;
+      for (const value of data) sum += value * value;
+      const rms = Math.sqrt(sum / data.length);
+      const gate = Math.max(Number($("noiseGate").value), noiseFloor * 2.6);
+      const pct = Math.max(0, Math.min(100, (rms / 0.18) * 100));
+      $("meterFill").style.width = `${pct}%`;
+      if (rms > gate) {
+        voiceReadyUntil = Date.now() + 1400;
+        $("noiseDot").className = "dot ok";
+        $("noiseLabel").textContent = "Voice";
+      } else {
+        $("noiseDot").className = "dot warn";
+        $("noiseLabel").textContent = "Noise idle";
+      }
+    }
+
+    async function calibrateNoise() {
+      await startMicMeter();
+      log("Noise calibration started", "warn");
+      const samples = [];
+      const start = Date.now();
+      while (Date.now() - start < 2200) {
+        await new Promise((resolve) => setTimeout(resolve, 80));
+        if (!analyser) continue;
+        const data = new Float32Array(analyser.fftSize);
+        analyser.getFloatTimeDomainData(data);
+        let sum = 0;
+        for (const value of data) sum += value * value;
+        samples.push(Math.sqrt(sum / data.length));
+      }
+      samples.sort((a, b) => a - b);
+      noiseFloor = samples[Math.floor(samples.length * 0.72)] || noiseFloor;
+      $("noiseGate").value = Math.max(0.005, Math.min(0.15, noiseFloor * 3)).toFixed(3);
+      log(`Noise floor ${noiseFloor.toFixed(4)}, gate ${$("noiseGate").value}`, "ok");
+    }
+
+    async function startVoice() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        log("SpeechRecognition is not available in this browser", "bad");
+        return;
+      }
+      await startMicMeter();
+      recognition = new SpeechRecognition();
+      recognition.lang = "vi-VN";
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 3;
+      recognition.onstart = () => {
+        listening = true;
+        $("voiceDot").className = "dot ok";
+        $("voiceState").innerHTML = `<span class="dot ok"></span> Live`;
+        log("Voice recognition started", "ok");
+      };
+      recognition.onend = () => {
+        listening = false;
+        $("voiceDot").className = "dot";
+        $("voiceState").innerHTML = `<span class="dot"></span> Idle`;
+        if (recognition) {
+          window.setTimeout(() => {
+            if (recognition && !listening) {
+              try { recognition.start(); } catch (_) {}
+            }
+          }, 350);
+        }
+      };
+      recognition.onerror = (event) => {
+        log(`Voice error: ${event.error}`, "warn");
+      };
+      recognition.onresult = (event) => {
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (!result.isFinal) continue;
+          const best = result[0];
+          log(`Heard: ${best.transcript} (${best.confidence ? best.confidence.toFixed(2) : "n/a"})`);
+          runVoiceCommand(best.transcript, best.confidence || 0.75);
+        }
+      };
+      try {
+        recognition.start();
+      } catch (error) {
+        log(`Voice start failed: ${error.message}`, "bad");
+      }
+    }
+
+    function stopVoice() {
+      if (recognition) {
+        const ref = recognition;
+        recognition = null;
+        try { ref.stop(); } catch (_) {}
+      }
+      listening = false;
+      $("voiceDot").className = "dot";
+      $("voiceState").innerHTML = `<span class="dot"></span> Idle`;
+      stopMicMeter();
+      log("Voice stopped", "warn");
+    }
+
+    function renderCommandHelp() {
+      $("commandList").innerHTML = "";
+      COMMAND_HELP.forEach(([phrase, action]) => {
+        const item = document.createElement("div");
+        item.className = "command-item";
+        item.innerHTML = `<b>${phrase}</b><span>${action}</span>`;
+        $("commandList").appendChild(item);
+      });
+    }
+
+    function updateCameraUi(active, text = null) {
+      $("cameraDot").className = active ? "dot ok" : "dot";
+      $("cameraState").textContent = text || (active ? "Live" : "Off");
+    }
+
+    async function refreshCameraList() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        $("cameraSelect").innerHTML = `<option value="">Browser camera API unavailable</option>`;
+        updateCameraUi(false, "No API");
+        return;
+      }
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter((device) => device.kind === "videoinput");
+      $("cameraSelect").innerHTML = "";
+      if (!cameras.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "No camera found";
+        $("cameraSelect").appendChild(option);
+        return;
+      }
+      cameras.forEach((camera, index) => {
+        const option = document.createElement("option");
+        option.value = camera.deviceId;
+        option.textContent = camera.label || `Camera ${index + 1}`;
+        $("cameraSelect").appendChild(option);
+      });
+    }
+
+    function selectedCameraConstraints() {
+      const [width, height] = $("cameraQuality").value.split("x").map(Number);
+      const deviceId = $("cameraSelect").value;
+      return {
+        video: {
+          width: { ideal: width },
+          height: { ideal: height },
+          frameRate: { ideal: 30, max: 60 },
+          ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+        },
+        audio: false,
+      };
+    }
+
+    function stopCamera() {
+      if (cameraFpsTimer) window.clearInterval(cameraFpsTimer);
+      if (cameraFrameTimer && $("cameraVideo").cancelVideoFrameCallback) {
+        $("cameraVideo").cancelVideoFrameCallback(cameraFrameTimer);
+      } else if (cameraFrameTimer) {
+        window.cancelAnimationFrame(cameraFrameTimer);
+      }
+      cameraFpsTimer = null;
+      cameraFrameTimer = null;
+      cameraFrameCount = 0;
+      cameraLastFrameCount = 0;
+      if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop());
+      cameraStream = null;
+      $("cameraVideo").srcObject = null;
+      $("cameraInfo").textContent = "No camera";
+      $("cameraFps").textContent = "0 FPS";
+      updateCameraUi(false);
+    }
+
+    function countCameraFrame() {
+      if (!cameraStream) return;
+      cameraFrameCount += 1;
+      if ($("cameraVideo").requestVideoFrameCallback) {
+        cameraFrameTimer = $("cameraVideo").requestVideoFrameCallback(countCameraFrame);
+      } else {
+        cameraFrameTimer = window.requestAnimationFrame(countCameraFrame);
+      }
+    }
+
+    async function startCamera() {
+      try {
+        stopCamera();
+        updateCameraUi(false, "Starting");
+        cameraStream = await navigator.mediaDevices.getUserMedia(selectedCameraConstraints());
+        $("cameraVideo").srcObject = cameraStream;
+        await $("cameraVideo").play();
+        await refreshCameraList();
+        const track = cameraStream.getVideoTracks()[0];
+        const settings = track ? track.getSettings() : {};
+        $("cameraInfo").textContent = `${settings.width || "?"}x${settings.height || "?"}`;
+        updateCameraUi(true);
+        countCameraFrame();
+        cameraFpsTimer = window.setInterval(() => {
+          const fps = cameraFrameCount - cameraLastFrameCount;
+          cameraLastFrameCount = cameraFrameCount;
+          $("cameraFps").textContent = `${fps} FPS`;
+        }, 1000);
+        log("Camera started", "ok");
+      } catch (error) {
+        stopCamera();
+        updateCameraUi(false, "Error");
+        log(`Camera error: ${error.message}`, "bad");
+      }
+    }
+
+    function updateCameraMirror() {
+      $("cameraView").classList.toggle("mirror", $("cameraMirror").checked);
+    }
+
+    function bindEvents() {
+      $("btnConnect").addEventListener("click", connect);
+      $("btnDisconnect").addEventListener("click", () => disconnect(true));
+      $("btnArm").addEventListener("click", () => sendControl("ARM"));
+      $("btnDisarm").addEventListener("click", () => sendControl("DISARM"));
+      $("btnOpen").addEventListener("click", () => {
+        sendControl("OPEN");
+        currentAngles = [...OPEN_ANGLE];
+        renderServoValues();
+      });
+      $("btnClose").addEventListener("click", () => {
+        sendControl("CLOSE");
+        currentAngles = [...CLOSED_ANGLE];
+        renderServoValues();
+      });
+      $("btnEstop").addEventListener("click", () => sendControl("ESTOP"));
+      $("btnHold").addEventListener("click", () => setLastCommand("HOLD"));
+      $("gripSlider").addEventListener("input", (event) => sendGrip(event.target.value));
+      $("gripNumber").addEventListener("change", (event) => sendGrip(event.target.value));
+      document.querySelectorAll("[data-grip]").forEach((button) => {
+        button.addEventListener("click", () => sendGrip(button.dataset.grip));
+      });
+      $("btnDirectOpen").addEventListener("click", () => sendAngles([...OPEN_ANGLE], "Direct OPEN"));
+      $("btnDirectMid").addEventListener("click", () => sendAngles(anglesFromGrip(50), "Direct MID"));
+      $("btnDirectClose").addEventListener("click", () => sendAngles([...CLOSED_ANGLE], "Direct CLOSE"));
+      $("btnVoiceStart").addEventListener("click", startVoice);
+      $("btnVoiceStop").addEventListener("click", stopVoice);
+      $("btnCalNoise").addEventListener("click", calibrateNoise);
+      $("btnCameraStart").addEventListener("click", startCamera);
+      $("btnCameraStop").addEventListener("click", stopCamera);
+      $("btnCameraRefresh").addEventListener("click", refreshCameraList);
+      $("cameraQuality").addEventListener("change", () => {
+        if (cameraStream) startCamera();
+      });
+      $("cameraSelect").addEventListener("change", () => {
+        if (cameraStream) startCamera();
+      });
+      $("cameraMirror").addEventListener("change", updateCameraMirror);
+      $("btnRunText").addEventListener("click", () => runVoiceCommand($("manualVoiceText").value, 1, true));
+      $("manualVoiceText").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") runVoiceCommand($("manualVoiceText").value, 1, true);
+      });
+      window.addEventListener("keydown", (event) => {
+        if (event.code === "Space" && !event.repeat && document.activeElement.tagName !== "INPUT") {
+          event.preventDefault();
+          startVoice();
+        }
+      });
+      window.addEventListener("keyup", (event) => {
+        if (event.code === "Space" && document.activeElement.tagName !== "INPUT") {
+          event.preventDefault();
+        }
+      });
+    }
+
+    renderServoControls();
+    renderServoValues();
+    renderCommandHelp();
+    bindEvents();
+    updateCameraMirror();
+    refreshCameraList().catch((error) => log(`Camera list error: ${error.message}`, "warn"));
+    updateConnectionUi();
+    log("Master UI ready", "ok");
+  </script>
+</body>
+</html>

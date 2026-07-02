@@ -1,0 +1,30 @@
+{
+  "kind": "tendon_servo_profile_v1",
+  "profiles": [
+    {
+      "open_deadzone": 0.05,
+      "close_saturation": 0.74,
+      "curve": 0.88
+    },
+    {
+      "open_deadzone": 0.05,
+      "close_saturation": 0.62,
+      "curve": 0.66
+    },
+    {
+      "open_deadzone": 0.05,
+      "close_saturation": 0.68,
+      "curve": 0.72
+    },
+    {
+      "open_deadzone": 0.05,
+      "close_saturation": 0.66,
+      "curve": 0.7
+    },
+    {
+      "open_deadzone": 0.04,
+      "close_saturation": 0.7,
+      "curve": 0.92
+    }
+  ]
+}

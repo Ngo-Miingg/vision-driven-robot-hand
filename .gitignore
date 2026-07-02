@@ -1,0 +1,32 @@
+# Python environment and cache
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Build and release outputs
+release/
+*.zip
+
+# Runtime logs and local captures
+*.log
+logs/
+captures/
+recordings/
+*.avi
+*.mp4
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Arduino build artifacts
+build/
+*.elf
+*.bin
+*.hex
+*.map
