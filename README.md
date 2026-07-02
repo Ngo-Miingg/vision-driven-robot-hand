@@ -275,6 +275,4 @@ For the best first impression:
 6. Show CV realtime
 7. Show voice command
 
-## License
 
-No license has been added yet.
