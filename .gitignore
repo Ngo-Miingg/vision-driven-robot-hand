@@ -5,6 +5,7 @@ env/
 __pycache__/
 *.py[cod]
 *.pyo
+.pytest_cache/
 
 # Build and release outputs
 release/
@@ -23,6 +24,10 @@ recordings/
 Thumbs.db
 .idea/
 .vscode/
+~$*
+
+# Node/Web generated dependencies
+node_modules/
 
 # Arduino build artifacts
 build/
@@ -36,9 +41,30 @@ poster/*.pdf
 poster/*.pptx
 poster/Poster_Khung_preview*.png
 poster/_tmp_build_*/
+poster/_tmp_build_*/
+poster/_tmp_build_v*/
+poster/_poster_assets_final/
 poster/_ppt_export_png/
 poster/_build_poster_*.py
+poster/_build_poster_v*.py
+poster/_rebuild_poster_*.py
 
-# Keep only selected showcase images in git
-!poster/robot_hand_poster_khung_final.png
+# Report generated scratch versions
+reports/__pycache__/
+reports/*_wiring_fixed.*
+reports/*_wiring_realistic.*
+reports/*_deep_cv_technical.*
+reports/*_deep_cv_with_skeleton.*
+reports/*_final_with_real_model.*
+reports/Bao_cao_ket_thuc_hoc_phan_Robot_Hand_AIOT.docx
+reports/Bao_cao_ket_thuc_hoc_phan_Robot_Hand_AIOT.md
+reports/Bao_cao_ket_thuc_hoc_phan_Robot_Hand_AIOT.pdf
+
+# Keep selected showcase assets in git
 !poster/dashboard_capture_hd.png
+!poster/robot_hand_poster_khung_final.png
+!poster/robot_hand_model_real.jpg
+!reports/assets/
+!reports/assets/*.png
+!web_poster/
+!web_poster/poster_full_vector.pdf

@@ -2,13 +2,13 @@
 
 # Vision-Driven Robot Hand
 
-### Real-time AIoT robot hand control with Computer Vision, Web Dashboard, Voice Commands, ESP32, Arduino Uno, and 5-servo tendon actuation
+### From human hand motion to physical robot-hand motion in realtime
 
 <p>
   <img src="https://img.shields.io/badge/AI-Computer%20Vision-blueviolet?style=for-the-badge" alt="AI Computer Vision" />
-  <img src="https://img.shields.io/badge/Control-Realtime-success?style=for-the-badge" alt="Realtime Control" />
-  <img src="https://img.shields.io/badge/Embedded-ESP32%20%2B%20Arduino-informational?style=for-the-badge" alt="Embedded" />
-  <img src="https://img.shields.io/badge/Protocol-Binary%208--Byte-orange?style=for-the-badge" alt="Binary Protocol" />
+  <img src="https://img.shields.io/badge/Realtime-Control-success?style=for-the-badge" alt="Realtime Control" />
+  <img src="https://img.shields.io/badge/Embedded-ESP32%20%2B%20Arduino-orange?style=for-the-badge" alt="Embedded" />
+  <img src="https://img.shields.io/badge/Protocol-Binary%208--Byte-red?style=for-the-badge" alt="Binary Protocol" />
 </p>
 
 <p>
@@ -19,7 +19,9 @@
 </p>
 
 <p>
-  <img src="poster/robot_hand_poster_khung_final.png" alt="Vision-Driven Robot Hand Poster" width="82%" />
+  <a href="web_poster/poster_full_vector.pdf">
+    <img src="reports/assets/robot_hand_model_real.png" alt="Vision-Driven Robot Hand Real Model" width="84%" />
+  </a>
 </p>
 
 <p>
@@ -32,49 +34,188 @@
 
 </div>
 
+## Why This Repo Feels Strong
+
+Most student AI projects stop at detection.
+
+Most hardware demos stop at manual control.
+
+This project goes further and closes the full loop:
+
+- sees a real human hand through camera input
+- maps that motion into servo behavior
+- sends compact realtime control packets
+- bridges browser and PC control to embedded hardware
+- moves a physical tendon-driven robot hand
+
+That full-chain continuity is what gives the project real engineering weight.
+
+## At A Glance
+
+| Aspect | What makes it valuable |
+| --- | --- |
+| Real hardware | Controls actual servos, not simulation |
+| AIoT pipeline | Vision -> transport -> embedded -> actuation |
+| Multiple control modes | CV, dashboard, voice commands |
+| Safety model | `ARM`, `DISARM`, `ESTOP`, preview-first workflow |
+| Embedded protocol | Fixed 8-byte packet for deterministic transport |
+| Demo readiness | Has a clear operator flow and test-first execution path |
+
+## Poster And Demo Pack
+
+| Official Poster | Dashboard Capture |
+| --- | --- |
+| [Open `poster_full_vector.pdf`](web_poster/poster_full_vector.pdf) | <img src="poster/dashboard_capture_hd.png" alt="Dashboard Demo" width="100%" /> |
+
+The official poster is now shipped as a vector PDF for clean viewing and presentation quality.
+
+- Poster source used for README: [`web_poster/poster_full_vector.pdf`](web_poster/poster_full_vector.pdf)
+- Dashboard screenshot used for operator view: [`poster/dashboard_capture_hd.png`](poster/dashboard_capture_hd.png)
+
+## Visual Preview
+
+| Real Robot Hand | System Architecture |
+| --- | --- |
+| <img src="reports/assets/robot_hand_model_real.png" alt="Real Robot Hand" width="100%" /> | <img src="reports/assets/fig_03_system_architecture.png" alt="System Architecture" width="100%" /> |
+
+These two visuals tell the whole story quickly:
+
+- the left side proves this is a real physical build
+- the right side explains how perception, transport, and actuation connect end to end
+
+## Technical Gallery
+
+| Hardware Wiring | Packet Format |
+| --- | --- |
+| <img src="reports/assets/fig_04_hardware_wiring.png" alt="Hardware Wiring" width="100%" /> | <img src="reports/assets/fig_06_packet_format.png" alt="Packet Format" width="100%" /> |
+
+| Safety State Machine | CV Algorithm |
+| --- | --- |
+| <img src="reports/assets/fig_07_state_machine.png" alt="State Machine" width="100%" /> | <img src="reports/assets/fig_08_cv_algorithm.png" alt="CV Algorithm" width="100%" /> |
+
+| Skeleton Preview | Hardware Reference |
+| --- | --- |
+| <img src="reports/assets/cv_skeleton.png" alt="CV Skeleton" width="100%" /> | <img src="reports/assets/hardware_reference.png" alt="Hardware Reference" width="100%" /> |
+
+This turns the README from a plain description into a compact technical exhibit:
+
+- architecture for system thinking
+- wiring for hardware trust
+- packet format for embedded credibility
+- state machine for safety logic
+- CV visuals for perception depth
+
+## Core Experience
+
+```text
+Your hand moves
+-> the camera captures it
+-> the PC interprets it
+-> the ESP32 relays it
+-> the Arduino executes it
+-> the robot hand responds
+```
+
+That immediate cause-and-effect is the heart of the demo.
+
+## Full Live Pipeline
+
+```text
+Camera / Voice / Dashboard
+-> PC client or browser UI
+-> Binary packet (8 bytes)
+-> ESP32 WebSocket bridge
+-> UART2 TX2 GPIO17
+-> Arduino Uno RX D0
+-> 5-servo tendon-driven robot hand
+```
+
 ## Table Of Contents
 
 - [Vietnamese](#vietnamese)
 - [English](#english)
 - [Project Assets](#project-assets)
+- [License](#license)
 
 ---
 
 ## Vietnamese
 
-### Giới thiệu
+### Tổng quan
 
-`Vision-Driven Robot Hand` là dự án AIoT điều khiển bàn tay robot 5 bậc tự do theo thời gian thực, trong đó chuyển động bàn tay người được thu nhận bằng camera, xử lý trên PC, đóng gói thành lệnh nhị phân, truyền qua ESP32 và thực thi trên Arduino Uno để điều khiển cụm servo thật.
+`Vision-Driven Robot Hand` là dự án AIoT điều khiển bàn tay robot 5 bậc tự do theo thời gian thực, trong đó chuyển động bàn tay người được camera ghi nhận, xử lý trên PC, chuyển thành gói lệnh nhị phân, truyền qua ESP32 và thực thi trên Arduino Uno để điều khiển cụm servo thật.
 
-Đây là một bài toán triển khai AI vào phần cứng thực tế, không dừng lại ở mức nhận diện hình ảnh. Hệ thống đi trọn chuỗi:
+Poster chính thức của dự án hiện được dùng dưới dạng vector PDF:
 
-- Perception bằng Computer Vision
-- Operator control bằng dashboard web
-- Realtime communication bằng WebSocket + UART
-- Embedded actuation trên ESP32 và Arduino Uno
-- Safety workflow để vận hành phần cứng thật
+- [`web_poster/poster_full_vector.pdf`](web_poster/poster_full_vector.pdf)
 
-### Điểm nổi bật
+Điểm mạnh của dự án không nằm ở việc nhận diện cho đẹp, mà ở chỗ toàn bộ pipeline đã đi tới phần cứng thật:
 
-| Hạng mục | Mô tả |
+- cảm nhận bằng Computer Vision
+- điều khiển bằng dashboard web và voice command
+- truyền lệnh realtime bằng WebSocket và UART
+- bridge nhúng bằng ESP32
+- chấp hành cuối bằng Arduino Uno và cụm servo
+
+### Vì sao dự án này đáng giá
+
+| Hạng mục | Ý nghĩa |
 | --- | --- |
-| Realtime hardware control | Điều khiển servo thật, không phải mô phỏng |
-| Multi-input control | Nhận lệnh từ CV, dashboard hoặc voice command |
-| Layered architecture | Tách rõ CV, web, protocol, ESP32 bridge, Uno actuator |
-| Safety-first workflow | Có `ARM`, `DISARM`, `ESTOP`, link test và preview an toàn |
-| Embedded-friendly protocol | Binary packet 8 byte gọn, dễ kiểm tra checksum, dễ debug |
-| Demo-ready | Có sẵn script cho setup, link test, preview và realtime run |
+| Real hardware control | Robot tay thật chuyển động theo lệnh thật |
+| AI triển khai tới actuator | Không dừng ở model hay preview camera |
+| Kiến trúc nhiều lớp | Dễ tách bạch để test, debug và demo |
+| Workflow an toàn | Có `ARM`, `DISARM`, `ESTOP`, link test, preview trước khi chạy thật |
+| Protocol gọn | Packet 8 byte phù hợp với embedded realtime control |
+| Giá trị portfolio cao | Thể hiện tốt năng lực AI ứng dụng, embedded và systems integration |
 
-### Demo trực quan
+### Tính năng hiện có
 
-| Poster tổng quan | Dashboard điều khiển |
+| Thành phần | Khả năng hiện tại |
 | --- | --- |
-| <img src="poster/robot_hand_poster_khung_final.png" alt="Project Poster" width="100%" /> | <img src="poster/dashboard_capture_hd.png" alt="Dashboard Demo" width="100%" /> |
+| Robot hand | `OPEN`, `CLOSE`, `GRIP`, direct servo angles, hold pose |
+| Computer vision | Theo dõi hand skeleton, calibration, preview, realtime send |
+| Web dashboard | Connect, ARM/DISARM, grip slider, direct servo sliders, camera preview |
+| Voice control | Lệnh cơ bản như open hand, close hand, arm, disarm, estop |
+| Debugging | Link test, packet test, protocol reference, hardware checklist |
 
-Hai hình trên thể hiện rõ hai mặt quan trọng nhất của dự án:
+### Gallery kỹ thuật
 
-- Bức tranh hệ thống tổng thể từ AI đến actuator thật
-- Giao diện vận hành thực tế dùng để điều khiển, test và demo
+| Mô hình thật | Dashboard |
+| --- | --- |
+| <img src="reports/assets/robot_hand_model_real.png" alt="Real Robot Hand" width="100%" /> | <img src="poster/dashboard_capture_hd.png" alt="Dashboard Demo" width="100%" /> |
+
+| Kiến trúc hệ thống | Wiring phần cứng |
+| --- | --- |
+| <img src="reports/assets/fig_03_system_architecture.png" alt="System Architecture" width="100%" /> | <img src="reports/assets/fig_04_hardware_wiring.png" alt="Hardware Wiring" width="100%" /> |
+
+| State machine an toàn | CV skeleton |
+| --- | --- |
+| <img src="reports/assets/fig_07_state_machine.png" alt="State Machine" width="100%" /> | <img src="reports/assets/cv_skeleton.png" alt="CV Skeleton" width="100%" /> |
+
+Các hình này giúp README có chiều sâu hơn ở cả ba lớp:
+
+- lớp hệ thống: kiến trúc, wiring, protocol
+- lớp vận hành: dashboard, mode điều khiển, safety
+- lớp AI: skeleton tracking và pipeline xử lý
+
+### Bản sắc kỹ thuật của hệ thống
+
+Dự án này có chất vì nó tôn trọng đúng bản chất của phần cứng thật:
+
+- truyền thông có thể lỗi
+- nguồn có thể sụt
+- servo có thể rung hoặc giật
+- calibration có thể lệch
+- browser không phải lúc nào cũng là lớp điều khiển cuối đáng tin cậy
+
+Vì vậy hệ thống được xây với tư duy an toàn ngay từ đầu:
+
+- `ARM`
+- `DISARM`
+- `ESTOP`
+- preview trước khi chạy live
+- link test trước khi đổ lỗi cho CV
+- calibration cố định giữa các tầng
 
 ### Tech Stack
 
@@ -90,29 +231,7 @@ Các công nghệ và thành phần chính:
 - Arduino Uno điều khiển 5 servo tendon-driven
 - Giao thức binary 8 byte cho realtime control
 
-### Hệ thống làm được gì
-
-| Thành phần | Khả năng hiện tại |
-| --- | --- |
-| Robot hand | `OPEN`, `CLOSE`, `GRIP`, direct servo angles, hold pose |
-| Computer vision | Theo dõi hand skeleton, calibration, preview, realtime send |
-| Web dashboard | Connect, ARM/DISARM, grip slider, direct servo sliders, camera preview |
-| Voice control | Lệnh cơ bản như open hand, close hand, arm, disarm, estop |
-| Debugging | Link test, packet test, protocol reference, hardware checklist |
-
-### Kiến trúc tổng thể
-
-```text
-Camera / Voice / Dashboard
--> PC client hoặc browser UI
--> Binary packet 8 byte
--> ESP32 WebSocket bridge
--> UART2 TX2 GPIO17
--> Arduino Uno RX D0
--> 5-servo tendon-driven robot hand
-```
-
-### Kiến trúc theo tầng
+### Kiến trúc hệ thống
 
 #### 1. Computer Vision Layer
 
@@ -208,7 +327,7 @@ OPEN  = {40, 180, 0,   0,   80}
 CLOSE = {170, 0,   180, 180, 0}
 ```
 
-Đây là calibration cần phải đồng bộ giữa firmware, PC client và dashboard.
+Đây là calibration bắt buộc phải đồng bộ giữa firmware, PC client và dashboard.
 
 Tài liệu liên quan:
 
@@ -258,7 +377,7 @@ WS:   ws://192.168.4.1:81
 
 #### Master Control Dashboard
 
-Mode đầy đủ nhất để demo và vận hành:
+Đây là mode đầy đủ nhất để demo và vận hành thực tế.
 
 - Web control panel
 - `ARM` / `DISARM` / `ESTOP`
@@ -286,7 +405,7 @@ Mode an toàn để kiểm tra landmark và mapping mà không tác động lên
 
 #### CV Realtime Control
 
-Chỉ dùng sau khi link test đã pass.
+Chỉ chạy khi link test đã pass và phần cứng đã sẵn sàng.
 
 ```powershell
 .\run_realtime_cv.bat
@@ -331,6 +450,18 @@ Chi tiết thêm:
 
 - [`docs/protocol.md`](docs/protocol.md)
 - [`tools/make_packet_reference.py`](tools/make_packet_reference.py)
+
+### Trình tự demo nên dùng
+
+1. Giới thiệu phần cứng và quy tắc cấp nguồn.
+2. Giải thích pipeline `PC -> ESP32 -> Uno -> Servo`.
+3. Chạy `link test`.
+4. Mở dashboard và điều khiển trực tiếp từng servo.
+5. Chạy `CV preview`.
+6. Chạy `CV realtime`.
+7. Kết thúc bằng grip presets hoặc voice command.
+
+Đây là trình tự giúp người xem đi từ niềm tin kỹ thuật sang ấn tượng trực quan.
 
 ### Quy trình an toàn
 
@@ -394,7 +525,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build_release.ps1
 
 ### Kết luận ngắn
 
-Dự án này thể hiện rõ một pipeline AIoT hoàn chỉnh: từ perception, protocol, control đến actuator thật. Đây là một portfolio project rất mạnh cho AI ứng dụng, robotics và embedded integration.
+Đây là kiểu dự án nhìn đẹp trên portfolio, nhưng quan trọng hơn là nó thể hiện được tư duy systems integration thực sự: AI, protocol, embedded, safety và motion đều gặp nhau trong một hệ thống có thể demo được trên phần cứng thật.
 
 ---
 
@@ -404,37 +535,30 @@ Dự án này thể hiện rõ một pipeline AIoT hoàn chỉnh: từ perceptio
 
 `Vision-Driven Robot Hand` is a real-time AIoT project that maps human hand motion to a physical 5-servo robot hand. Camera input is processed on the PC, converted into compact binary control packets, transmitted through ESP32, and executed by Arduino Uno on real hardware.
 
-This is not just a vision demo. It is an end-to-end deployment pipeline covering:
+The project's official poster is now provided as a vector PDF:
 
-- Computer vision perception
-- Operator control through a web dashboard
-- Realtime communication with WebSocket and UART
-- Embedded actuation with ESP32 and Arduino Uno
-- Safety workflow for real hardware operation
+- [`web_poster/poster_full_vector.pdf`](web_poster/poster_full_vector.pdf)
 
-### Highlights
+Its strength is not just visual tracking. Its strength is that the entire chain reaches the real actuator layer:
 
-| Item | Description |
+- perception through computer vision
+- operator control through web dashboard and voice commands
+- realtime transport through WebSocket and UART
+- embedded bridging through ESP32
+- final actuation through Arduino Uno and real servos
+
+### Why this project matters
+
+| Area | Why it matters |
 | --- | --- |
-| Real hardware control | Drives actual servos instead of stopping at simulation |
-| Multi-input control | Supports CV, dashboard, and voice-command based control |
-| Layered architecture | CV, web UI, protocol, ESP32 bridge, and Uno actuator are separated cleanly |
-| Safety-first design | Includes `ARM`, `DISARM`, `ESTOP`, link test, and safe preview mode |
-| Embedded-friendly protocol | Uses a compact fixed 8-byte binary packet |
-| Demo-ready workflow | Includes scripts for setup, testing, preview, and realtime operation |
+| Real hardware control | Moves actual servos instead of stopping at simulation |
+| AI-to-actuator pipeline | Goes beyond model output and reaches physical execution |
+| Clear layered structure | Easier to test, debug, and demonstrate |
+| Safety-first workflow | Includes `ARM`, `DISARM`, `ESTOP`, link testing, and safe preview |
+| Compact protocol | Uses a deterministic 8-byte packet suited to embedded control |
+| Strong portfolio value | Shows applied AI, embedded integration, and full-system thinking |
 
-### Visual Preview
-
-| System Poster | Control Dashboard |
-| --- | --- |
-| <img src="poster/robot_hand_poster_khung_final.png" alt="Project Poster" width="100%" /> | <img src="poster/dashboard_capture_hd.png" alt="Dashboard Demo" width="100%" /> |
-
-These two visuals quickly communicate the project's value:
-
-- a complete AI-to-hardware control story
-- a practical operator-facing dashboard for real demonstrations
-
-### System Capability
+### Current capabilities
 
 | Component | Current capability |
 | --- | --- |
@@ -444,19 +568,46 @@ These two visuals quickly communicate the project's value:
 | Voice control | Basic commands such as open hand, close hand, arm, disarm, estop |
 | Debugging | Link test, packet test, protocol reference, hardware checklist |
 
-### Full Pipeline
+### Technical gallery
 
-```text
-Camera / Voice / Dashboard
--> PC client or browser UI
--> 8-byte binary packet
--> ESP32 WebSocket bridge
--> UART2 TX2 GPIO17
--> Arduino Uno RX D0
--> 5-servo tendon-driven robot hand
-```
+| Real Build | Dashboard |
+| --- | --- |
+| <img src="reports/assets/robot_hand_model_real.png" alt="Real Robot Hand" width="100%" /> | <img src="poster/dashboard_capture_hd.png" alt="Dashboard Demo" width="100%" /> |
 
-### Layered Architecture
+| System Architecture | Hardware Wiring |
+| --- | --- |
+| <img src="reports/assets/fig_03_system_architecture.png" alt="System Architecture" width="100%" /> | <img src="reports/assets/fig_04_hardware_wiring.png" alt="Hardware Wiring" width="100%" /> |
+
+| Safety State Machine | CV Skeleton |
+| --- | --- |
+| <img src="reports/assets/fig_07_state_machine.png" alt="State Machine" width="100%" /> | <img src="reports/assets/cv_skeleton.png" alt="CV Skeleton" width="100%" /> |
+
+These visuals add depth across three different dimensions:
+
+- system architecture and transport logic
+- operator workflow and safety behavior
+- computer vision perception quality
+
+### Engineering identity
+
+This project feels credible because it respects the realities of physical systems:
+
+- communication can fail
+- power can sag
+- servos can jitter
+- calibration can drift
+- browser transport is not always sufficient by itself
+
+That is why the design includes:
+
+- `ARM`
+- `DISARM`
+- `ESTOP`
+- preview-before-live operation
+- link testing before blaming CV
+- fixed calibration references across layers
+
+### Layered architecture
 
 #### 1. Computer Vision Layer
 
@@ -599,11 +750,11 @@ WS:   ws://192.168.4.1:81
 .\run_realtime_cv.bat
 ```
 
-### Operating Modes
+### Operating modes
 
 #### Master Control Dashboard
 
-The most complete operator mode for demo and live control.
+This is the most complete mode for demo and live operation.
 
 - Web control panel
 - `ARM` / `DISARM` / `ESTOP`
@@ -623,7 +774,7 @@ Connect -> ARM -> OPEN/CLOSE/GRIP -> DIRECT CONTROL
 
 #### CV Preview Only
 
-Safe mode for checking landmark quality and mapping without moving the hardware.
+Safe mode for checking landmarks and mapping without moving the hardware.
 
 ```powershell
 .\run_preview_cv.bat
@@ -631,7 +782,7 @@ Safe mode for checking landmark quality and mapping without moving the hardware.
 
 #### CV Realtime Control
 
-Use only after the link test passes.
+Run only after the link test passes and the hardware path is stable.
 
 ```powershell
 .\run_realtime_cv.bat
@@ -643,7 +794,7 @@ Use only after the link test passes.
 .\run_link_test.bat
 ```
 
-This validates the direct control path:
+It validates the direct path:
 
 ```text
 PC -> WebSocket -> ESP32 -> UART -> Uno
@@ -677,14 +828,26 @@ More details:
 - [`docs/protocol.md`](docs/protocol.md)
 - [`tools/make_packet_reference.py`](tools/make_packet_reference.py)
 
+### Recommended demo order
+
+1. Show the hardware and power rules.
+2. Explain the `PC -> ESP32 -> Uno -> Servo` pipeline.
+3. Run the `link test`.
+4. Open the dashboard and show direct servo control.
+5. Run `CV preview`.
+6. Run `CV realtime`.
+7. Finish with grip presets or voice commands.
+
+This sequence moves the audience from technical trust to visual impact.
+
 ### Safety Workflow
 
-1. Check power and common ground.
+1. Check power and shared ground.
 2. Confirm wiring.
 3. Run the `link test`.
 4. Open the dashboard and `ARM` only when ready.
 5. Test `OPEN`, `CLOSE`, and `GRIP` first.
-6. Run `CV realtime` only after the transport path is stable.
+6. Run `CV realtime` only after transport is stable.
 7. Use `DISARM` or `ESTOP` for any abnormal motion.
 
 Main states:
@@ -739,7 +902,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build_release.ps1
 
 ### Short Conclusion
 
-This project shows a complete AIoT deployment chain from perception to protocol to real-world actuation. It is a strong portfolio piece for applied AI, robotics integration, and embedded control workflows.
+This is the kind of repository that looks strong in a portfolio, but more importantly, it proves genuine systems integration ability: AI, protocol, embedded control, safety, and motion all come together in one working hardware demo.
 
 ---
 
@@ -751,9 +914,9 @@ This project shows a complete AIoT deployment chain from perception to protocol 
 - Handover notes: [`HANDOVER.md`](HANDOVER.md)
 - Hardware checklist: [`HARDWARE_CHECKLIST.md`](HARDWARE_CHECKLIST.md)
 - Known issues: [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md)
-- Poster image: [`poster/robot_hand_poster_khung_final.png`](poster/robot_hand_poster_khung_final.png)
+- Official poster PDF: [`web_poster/poster_full_vector.pdf`](web_poster/poster_full_vector.pdf)
 - Dashboard screenshot: [`poster/dashboard_capture_hd.png`](poster/dashboard_capture_hd.png)
-
+- Report assets: [`reports/assets/`](reports/assets/)
 
 ## License
 
