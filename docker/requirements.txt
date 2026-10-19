@@ -1,0 +1,4 @@
+# Only the WebSocket bridge library is required for dashboard/API.
+# Vosk + sounddevice are intentionally not installed: Windows microphones
+# are not directly available to Linux containers on Docker Desktop.
+websocket-client==1.8.0

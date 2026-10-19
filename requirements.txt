@@ -1,0 +1,3 @@
+-r pc_client/requirements.txt
+sounddevice
+vosk

@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Robot Hand Realtime CV Test</title>
+  <style>
+    :root {
+      --bg: #eef7f3;
+      --panel: rgba(255, 255, 255, 0.95);
+      --line: #b8d0c7;
+      --ink: #172329;
+      --muted: #5c7270;
+      --accent: #14936b;
+      --accent-soft: #d6f5ea;
+      --blue-soft: #dbeaff;
+      --warn-soft: #fff0cc;
+      --shadow: 0 16px 40px rgba(22, 53, 49, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "Inter", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(53, 180, 156, 0.14), transparent 32%),
+        radial-gradient(circle at top right, rgba(70, 124, 199, 0.12), transparent 28%),
+        linear-gradient(180deg, #f6fbf8 0%, var(--bg) 100%);
+    }
+
+    .page {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 18px;
+      padding: 22px 24px;
+      border: 1px solid rgba(184, 208, 199, 0.9);
+      border-radius: 26px;
+      background: rgba(245, 252, 249, 0.88);
+      box-shadow: var(--shadow);
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 2rem;
+      line-height: 1.1;
+    }
+
+    .hero p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font-weight: 700;
+      color: #114235;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 999px;
+      background: #c65b4d;
+      box-shadow: 0 0 0 5px rgba(198, 91, 77, 0.13);
+    }
+
+    .dot.ok {
+      background: #18a574;
+      box-shadow: 0 0 0 5px rgba(24, 165, 116, 0.14);
+    }
+
+    .dot.warn {
+      background: #d3911c;
+      box-shadow: 0 0 0 5px rgba(211, 145, 28, 0.14);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 22px;
+    }
+
+    .panel {
+      border: 1px solid rgba(184, 208, 199, 0.92);
+      border-radius: 24px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(184, 208, 199, 0.92);
+    }
+
+    .panel h2 {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+
+    .panel-body {
+      padding: 18px;
+    }
+
+    .camera-view {
+      position: relative;
+      min-height: 620px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #0d1915;
+    }
+
+    .camera-view video {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      min-height: 620px;
+      object-fit: cover;
+      display: block;
+      background: #111a17;
+    }
+
+    .camera-view canvas {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .camera-view.mirror video,
+    .camera-view.mirror canvas {
+      transform: scaleX(-1);
+    }
+
+    .overlay {
+      position: absolute;
+      z-index: 3;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(12, 24, 21, 0.78);
+      color: #f7fffb;
+      font-weight: 700;
+      font-size: 1.02rem;
+    }
+
+    .stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .control {
+      display: grid;
+      gap: 8px;
+    }
+
+    .control label {
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    select,
+    button {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      font: inherit;
+    }
+
+    select {
+      padding: 12px 14px;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    button {
+      padding: 14px 16px;
+      font-weight: 800;
+      cursor: pointer;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .btn-green {
+      background: var(--accent-soft);
+      color: #0f6a50;
+    }
+
+    .btn-blue {
+      background: var(--blue-soft);
+      color: #215792;
+    }
+
+    .btn-warn {
+      background: var(--warn-soft);
+      color: #8a5a00;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      font-weight: 700;
+    }
+
+    input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--accent);
+    }
+
+    .status-box {
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(184, 208, 199, 0.92);
+      background: linear-gradient(180deg, #fbfffd 0%, #f0faf5 100%);
+    }
+
+    .status-box b {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .status-box span {
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    .log {
+      min-height: 160px;
+      max-height: 220px;
+      overflow: auto;
+      padding: 14px;
+      border-radius: 16px;
+      background: #15211d;
+      color: #f2fff8;
+      font-family: Consolas, monospace;
+      font-size: 0.92rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
+    .note {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    @media (max-width: 960px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .camera-view,
+      .camera-view video {
+        min-height: 420px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div>
+        <h1>Realtime CV Skeleton Test</h1>
+        <p>Bản test chuyên cho realtime: camera, skeleton, FPS và điều khiển robot trực tiếp để đo độ trễ thật.</p>
+      </div>
+      <div class="pill"><span class="dot" id="liveDot"></span><span id="liveText">Idle</span></div>
+    </section>
+
+    <section class="layout">
+      <article class="panel">
+        <header>
+          <h2>Camera + Skeleton</h2>
+          <span class="pill"><span class="dot" id="trackDot"></span><span id="trackText">Skeleton off</span></span>
+        </header>
+        <div class="panel-body">
+          <div class="camera-view mirror" id="cameraView">
+            <video id="cameraVideo" autoplay muted playsinline></video>
+            <canvas id="cameraCanvas"></canvas>
+            <div class="overlay">
+              <span class="chip" id="cameraInfo">No camera</span>
+              <span class="chip" id="cameraFps">0 FPS</span>
+              <span class="chip" id="cameraSkeleton">Skeleton off</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <aside class="stack">
+        <article class="panel">
+          <header><h2>Realtime Control</h2></header>
+          <div class="panel-body stack">
+            <div class="actions">
+              <button id="btnConnect" class="btn-green">Connect</button>
+              <button id="btnDisconnect">Disconnect</button>
+            </div>
+            <div class="actions">
+              <button id="btnArm" class="btn-green">ARM</button>
+              <button id="btnDisarm" class="btn-warn">DISARM</button>
+            </div>
+            <label class="toggle"><input id="sendToggle" type="checkbox" checked /> Send skeleton realtime to robot</label>
+            <label class="toggle"><input id="cameraMirror" type="checkbox" checked /> Mirror preview</label>
+          </div>
+        </article>
+
+        <article class="panel">
+          <header><h2>Camera Setup</h2></header>
+          <div class="panel-body stack">
+            <div class="control">
+              <label for="cameraSelect">Camera source</label>
+              <select id="cameraSelect"></select>
+            </div>
+            <div class="control">
+              <label for="cameraQuality">Quality</label>
+              <select id="cameraQuality">
+                <option value="640x360" selected>640 x 360</option>
+                <option value="960x540">960 x 540</option>
+                <option value="1280x720">1280 x 720</option>
+              </select>
+            </div>
+            <div class="actions">
+              <button id="btnCameraStart" class="btn-green">Cam ON</button>
+              <button id="btnCameraStop">Cam OFF</button>
+            </div>
+            <div class="actions">
+              <button id="btnCameraRefresh" class="btn-blue">Refresh</button>
+              <button id="btnReload" class="btn-blue">Reload</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <header><h2>Status</h2></header>
+          <div class="panel-body stack">
+            <div class="status-box">
+              <b>Bridge</b>
+              <span id="statusBridge">Offline</span>
+            </div>
+            <div class="status-box">
+              <b>ARM</b>
+              <span id="statusArm">DISARMED</span>
+            </div>
+            <div class="status-box">
+              <b>Camera</b>
+              <span id="statusCamera">Off</span>
+            </div>
+            <div class="status-box">
+              <b>Skeleton</b>
+              <span id="statusSkeleton">Off</span>
+            </div>
+            <div class="status-box">
+              <b>FPS</b>
+              <span id="statusFps">0</span>
+            </div>
+            <div class="status-box">
+              <b>Packet sent</b>
+              <span id="statusPackets">0</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <header><h2>Runtime Log</h2></header>
+          <div class="panel-body stack">
+            <div class="note">
+              Chế độ này gửi góc servo trực tiếp theo skeleton, nhưng vẫn giữ giao diện tối giản để test tốc độ realtime thật.
+            </div>
+            <div class="log" id="runtimeLog">Realtime CV test ready</div>
+          </div>
+        </article>
+      </aside>
+    </section>
+  </main>
+
+  <script src="vendor/mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="vendor/mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script src="vendor/mediapipe/hands/hands.js"></script>
+  <script>
+    const WS_URL_DEFAULT = "/api/send";
+    const CV_WS_URL_DEFAULT = "ws://127.0.0.1:8765";
+    const HAND_CONNECTIONS = [
+      [0, 1], [1, 2], [2, 3], [3, 4],
+      [0, 5], [5, 6], [6, 7], [7, 8],
+      [5, 9], [9, 10], [10, 11], [11, 12],
+      [9, 13], [13, 14], [14, 15], [15, 16],
+      [13, 17], [17, 18], [18, 19], [19, 20],
+      [0, 17],
+    ];
+    const OPEN_ANGLE = [170, 180, 0, 0, 0, 180];
+    const CLOSED_ANGLE = [40, 0, 180, 180, 180, 0];
+    const LIMITS = [[0, 170], [0, 180], [0, 180], [0, 180], [0, 80]];
+    const EMA_ALPHA = 0.45;
+    const REALTIME_TARGET_DEADBAND_DEG = [1, 1, 1, 1, 2, 1];
+    const DIRECT_CLOSE_SATURATION = [0.95, 0.95, 0.86, 0.82, 0.78, 0.85];
+    const OPEN_CALIBRATION = [0.050844, 0.184278, 0.194668, 0.147079, 0.021921, 0.05];
+    const MID_CALIBRATION = [0.223596, 0.446297, 0.442266, 0.468776, 0.590821, 0.40];
+    const CLOSE_CALIBRATION = [0.372126, 0.745904, 0.76798, 0.841377, 0.714515, 0.75];
+    const MODES = {
+      DIRECT: 0x01,
+      GRIP: 0x02,
+      ARM: 0x10,
+      DISARM: 0x11,
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    let connected = false;
+    let connecting = false;
+    let armed = false;
+    let packetCount = 0;
+    let httpSendUrl = WS_URL_DEFAULT;
+    let httpSendQueue = Promise.resolve();
+    let cvWs = null;
+    let cvConnected = false;
+    let cvConnecting = false;
+    let cvLastSentAngles = null;
+    let cvLastSendAt = 0;
+    let cvPendingAngles = null;
+    let cvFlushTimer = null;
+    let bridgeStatusTimer = null;
+
+    let cameraStream = null;
+    let cameraFpsTimer = null;
+    let cameraFrameTimer = null;
+    let cameraFrameCount = 0;
+    let cameraLastFrameCount = 0;
+    let handTrackingTimer = null;
+    let handsDetector = null;
+    let handsInitPromise = null;
+    let latestHandFrameTime = -1;
+    let cvRatioHistory = [];
+    let cvFilteredAngles = null;
+    let cvStableAngles = null;
+
+    function log(text) {
+      const now = new Date().toLocaleTimeString();
+      const box = $("runtimeLog");
+      box.textContent = `[${now}] ${text}\n` + box.textContent;
+    }
+
+    function clamp(value, low, high) {
+      return Math.max(low, Math.min(high, value));
+    }
+
+    function checksumXor(bytes) {
+      return bytes.reduce((acc, value) => acc ^ (value & 0xff), 0);
+    }
+
+    function makePacket(mode, payload = []) {
+      const frame = new Uint8Array(9);
+      frame[0] = 0xaa;
+      frame[1] = mode & 0xff;
+      for (let i = 0; i < Math.min(6, payload.length); i += 1) {
+        frame[2 + i] = Math.round(payload[i]) & 0xff;
+      }
+      frame[8] = checksumXor([...frame.slice(0, 8)]);
+      return frame;
+    }
+
+    function setDot(dotId, state) {
+      $(dotId).className = state === "ok" ? "dot ok" : state === "warn" ? "dot warn" : "dot";
+    }
+
+    function updateHeaderState() {
+      if (connecting) {
+        setDot("liveDot", "warn");
+        $("liveText").textContent = "Connecting";
+      } else if (connected && armed) {
+        setDot("liveDot", "ok");
+        $("liveText").textContent = "Live";
+      } else if (connected) {
+        setDot("liveDot", "ok");
+        $("liveText").textContent = "Connected";
+      } else {
+        setDot("liveDot", "base");
+        $("liveText").textContent = "Idle";
+      }
+      $("statusBridge").textContent = connected ? "Online" : connecting ? "Connecting" : "Offline";
+      $("statusArm").textContent = armed ? "ARMED" : "DISARMED";
+      $("statusPackets").textContent = String(packetCount);
+    }
+
+    function setTrackingState(active, text) {
+      setDot("trackDot", active ? "ok" : "base");
+      $("trackText").textContent = text;
+      $("statusSkeleton").textContent = text;
+      $("cameraSkeleton").textContent = text;
+    }
+
+    function buildBridgeStatusUrl(sendUrl, connectNow = false) {
+      const suffix = connectNow ? "/api/status?connect=1" : "/api/status";
+      return sendUrl.replace(/\/api\/send\/?$/, suffix);
+    }
+
+    async function syncBridgeStatus(connectNow = false) {
+      if (connectNow) {
+        connecting = true;
+        updateHeaderState();
+      }
+      try {
+        const response = await fetch(buildBridgeStatusUrl(httpSendUrl, connectNow), { cache: "no-store" });
+        const result = await response.json();
+        connected = Boolean(response.ok && result.ok && result.connected);
+        packetCount = Number(result.sent_count || packetCount || 0);
+        connecting = false;
+        updateHeaderState();
+        return connected;
+      } catch (error) {
+        connected = false;
+        connecting = false;
+        updateHeaderState();
+        log(`Bridge error: ${error.message}`);
+        return false;
+      }
+    }
+
+    function startBridgeStatusPolling() {
+      if (bridgeStatusTimer) return;
+      bridgeStatusTimer = window.setInterval(() => {
+        syncBridgeStatus(false).catch(() => {});
+      }, 2000);
+    }
+
+    async function connectBridge() {
+      connecting = true;
+      updateHeaderState();
+      const ok = await syncBridgeStatus(true);
+      log(ok ? "Bridge connected" : "Bridge not ready");
+    }
+
+    function disconnectCvTransport() {
+      const activeSocket = cvWs;
+      cvWs = null;
+      cvConnected = false;
+      cvConnecting = false;
+      cvLastSentAngles = null;
+      cvLastSendAt = 0;
+      cvPendingAngles = null;
+      if (cvFlushTimer) {
+        window.clearTimeout(cvFlushTimer);
+        cvFlushTimer = null;
+      }
+      if (activeSocket) {
+        activeSocket.onopen = null;
+        activeSocket.onclose = null;
+        activeSocket.onerror = null;
+        try { activeSocket.close(); } catch (_) {}
+      }
+    }
+
+    async function connectCvTransport() {
+      if (cvConnected && cvWs && cvWs.readyState === WebSocket.OPEN) return true;
+      if (cvConnecting) return false;
+
+      cvConnecting = true;
+      return await new Promise((resolve) => {
+        let opened = false;
+        try {
+          cvWs = new WebSocket(CV_WS_URL_DEFAULT);
+        } catch (error) {
+          cvConnecting = false;
+          cvConnected = false;
+          log(`CV transport invalid URL: ${error.message}`);
+          resolve(false);
+          return;
+        }
+
+        const activeSocket = cvWs;
+        activeSocket.binaryType = "arraybuffer";
+        activeSocket.onopen = () => {
+          if (cvWs !== activeSocket) return;
+          opened = true;
+          cvConnected = true;
+          cvConnecting = false;
+          log("CV transport ready");
+          resolve(true);
+        };
+        activeSocket.onclose = () => {
+          if (cvWs !== activeSocket) return;
+          cvWs = null;
+          cvConnected = false;
+          cvConnecting = false;
+          if (opened) log("CV transport disconnected");
+        };
+        activeSocket.onerror = () => {
+          if (cvWs !== activeSocket) return;
+          cvConnected = false;
+          cvConnecting = false;
+          log("CV transport error");
+          if (!opened) resolve(false);
+        };
+      });
+    }
+
+    async function sendHttpPacket(mode, payload = [], label = "packet") {
+      httpSendQueue = httpSendQueue
+        .catch(() => {})
+        .then(async () => {
+          if (!connected) {
+            const recovered = await syncBridgeStatus(true);
+            if (!recovered) {
+              log(`Bridge offline: ${label}`);
+              return;
+            }
+          }
+          try {
+            const response = await fetch(httpSendUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ mode, payload }),
+            });
+            const result = await response.json();
+            if (!response.ok || !result.ok) {
+              connected = false;
+              armed = false;
+              updateHeaderState();
+              log(`Bridge send failed: ${result.error || response.statusText}`);
+              return;
+            }
+            packetCount += 1;
+            updateHeaderState();
+            log(label);
+          } catch (error) {
+            connected = false;
+            armed = false;
+            updateHeaderState();
+            log(`Bridge HTTP error: ${error.message}`);
+          }
+        });
+      return httpSendQueue;
+    }
+
+    async function armRobot() {
+      await sendHttpPacket(MODES.ARM, [], "ARM");
+      if (connected) {
+        armed = true;
+        updateHeaderState();
+        await connectCvTransport();
+      }
+    }
+
+    async function disarmRobot() {
+      await sendHttpPacket(MODES.DISARM, [], "DISARM");
+      armed = false;
+      updateHeaderState();
+      disconnectCvTransport();
+    }
+
+    function selectedCameraConstraints() {
+      const quality = $("cameraQuality").value || "640x360";
+      const [width, height] = quality.split("x").map((value) => Number(value));
+      const deviceId = $("cameraSelect").value;
+      return {
+        video: {
+          deviceId: deviceId ? { exact: deviceId } : undefined,
+          width: { ideal: width },
+          height: { ideal: height },
+          frameRate: { ideal: 30, max: 60 },
+        },
+        audio: false,
+      };
+    }
+
+    function updateCameraMirror() {
+      $("cameraView").classList.toggle("mirror", $("cameraMirror").checked);
+    }
+
+    function resizeCameraCanvas() {
+      const video = $("cameraVideo");
+      const canvas = $("cameraCanvas");
+      const width = video.videoWidth || video.clientWidth || 640;
+      const height = video.videoHeight || video.clientHeight || 360;
+      if (canvas.width !== width) canvas.width = width;
+      if (canvas.height !== height) canvas.height = height;
+    }
+
+    function clearCameraCanvas() {
+      const canvas = $("cameraCanvas");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function countCameraFrame() {
+      cameraFrameCount += 1;
+      cameraFrameTimer = window.requestAnimationFrame(countCameraFrame);
+    }
+
+    function vectorSub(a, b) {
+      return a.map((value, index) => value - b[index]);
+    }
+
+    function vectorDot(a, b) {
+      return a.reduce((sum, value, index) => sum + value * b[index], 0);
+    }
+
+    function vectorNorm(a) {
+      return Math.sqrt(vectorDot(a, a));
+    }
+
+    function vectorCross(a, b) {
+      return [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+      ];
+    }
+
+    function normalizeVector(vector) {
+      const length = vectorNorm(vector);
+      if (length <= 1e-6) return null;
+      return vector.map((value) => value / length);
+    }
+
+    function median(values) {
+      const sorted = [...values].sort((a, b) => a - b);
+      const middle = Math.floor(sorted.length / 2);
+      if (sorted.length % 2) return sorted[middle];
+      return (sorted[middle - 1] + sorted[middle]) * 0.5;
+    }
+
+    function landmarkToArray(landmark, includeZ = true) {
+      return includeZ ? [Number(landmark.x), Number(landmark.y), Number(landmark.z || 0)] : [Number(landmark.x), Number(landmark.y)];
+    }
+
+    function handLocalLandmarks(worldLandmarks) {
+      const points = worldLandmarks.map((landmark) => landmarkToArray(landmark, true));
+      const wrist = points[0];
+      const indexMcp = points[5];
+      const pinkyMcp = points[17];
+      const middleMcp = points[9];
+      const xAxis = normalizeVector(vectorSub(indexMcp, pinkyMcp));
+      const ySeed = vectorSub(middleMcp, wrist);
+      if (!xAxis) return points.map((point) => vectorSub(point, wrist));
+      let zAxis = normalizeVector(vectorCross(xAxis, ySeed));
+      if (!zAxis) zAxis = normalizeVector(vectorCross(xAxis, vectorSub(indexMcp, wrist)));
+      if (!zAxis) return points.map((point) => vectorSub(point, wrist));
+      const yAxis = normalizeVector(vectorCross(zAxis, xAxis));
+      if (!yAxis) return points.map((point) => vectorSub(point, wrist));
+      return points.map((point) => {
+        const relative = vectorSub(point, wrist);
+        return [
+          vectorDot(relative, xAxis),
+          vectorDot(relative, yAxis),
+          vectorDot(relative, zAxis),
+        ];
+      });
+    }
+
+    function imageLandmarks2d(landmarks) {
+      return landmarks.map((landmark) => landmarkToArray(landmark, false));
+    }
+
+    function extractPoseLandmarks(imageLandmarks, worldLandmarks) {
+      if (worldLandmarks && worldLandmarks.length === 21) {
+        return handLocalLandmarks(worldLandmarks);
+      }
+      return imageLandmarks2d(imageLandmarks);
+    }
+
+    function pointAt(landmarks, index) {
+      return landmarks[index];
+    }
+
+    function angleDegrees(a, b, c) {
+      const ba = vectorSub(a, b);
+      const bc = vectorSub(c, b);
+      const denom = vectorNorm(ba) * vectorNorm(bc);
+      if (denom <= 1e-6) return 180;
+      const cosine = clamp(vectorDot(ba, bc) / denom, -1, 1);
+      return Math.acos(cosine) * 180 / Math.PI;
+    }
+
+    function jointAngleToCloseRatio(angle, openAngle = 170, closedAngle = 75) {
+      return clamp((openAngle - angle) / (openAngle - closedAngle), 0, 1);
+    }
+
+    function fingerCloseRatio(landmarks, mcp, pip, dip, tip) {
+      const pipAngle = angleDegrees(pointAt(landmarks, mcp), pointAt(landmarks, pip), pointAt(landmarks, dip));
+      const dipAngle = angleDegrees(pointAt(landmarks, pip), pointAt(landmarks, dip), pointAt(landmarks, tip));
+      return clamp(0.65 * jointAngleToCloseRatio(pipAngle) + 0.35 * jointAngleToCloseRatio(dipAngle), 0, 1);
+    }
+
+    function thumbCloseRatio(landmarks) {
+      const mcpAngle = angleDegrees(pointAt(landmarks, 1), pointAt(landmarks, 2), pointAt(landmarks, 3));
+      const ipAngle = angleDegrees(pointAt(landmarks, 2), pointAt(landmarks, 3), pointAt(landmarks, 4));
+      return clamp(0.55 * jointAngleToCloseRatio(mcpAngle, 165, 75) + 0.45 * jointAngleToCloseRatio(ipAngle, 165, 75), 0, 1);
+    }
+
+    function thumbOpposeRatio(landmarks) {
+      const wrist = pointAt(landmarks, 0);
+      const indexMcp = pointAt(landmarks, 5);
+      const pinkyMcp = pointAt(landmarks, 17);
+      const thumbTip = pointAt(landmarks, 4);
+      const palmWidth = vectorNorm(vectorSub(indexMcp, pinkyMcp));
+      if (palmWidth <= 1e-6) return 0;
+      const dist = vectorNorm(vectorSub(thumbTip, indexMcp)) / palmWidth;
+      const wristDist = vectorNorm(vectorSub(thumbTip, wrist)) / palmWidth;
+      const closeByIndex = 1 - clamp((dist - 0.45) / (1.25 - 0.45), 0, 1);
+      const closeByWrist = 1 - clamp((wristDist - 0.90) / (1.70 - 0.90), 0, 1);
+      return clamp(0.75 * closeByIndex + 0.25 * closeByWrist, 0, 1);
+    }
+
+    function landmarksToCloseRatios(landmarks) {
+      const thumb = thumbCloseRatio(landmarks);
+      const index = fingerCloseRatio(landmarks, 5, 6, 7, 8);
+      const middle = fingerCloseRatio(landmarks, 9, 10, 11, 12);
+      const ring = fingerCloseRatio(landmarks, 13, 14, 15, 16);
+      const pinky = fingerCloseRatio(landmarks, 17, 18, 19, 20);
+      const oppose = thumbOpposeRatio(landmarks);
+      return [thumb, index, middle, ring, oppose, pinky];
+    }
+
+    function calibrationModeForServo(openValue, midValue, closeValue) {
+      if (closeValue <= openValue + 1e-6) return "bad";
+      if (openValue < midValue && midValue < closeValue) return "3pt";
+      return "2pt";
+    }
+
+    function normalizeCloseRatios(rawRatios, openRatios, midRatios, closeRatios) {
+      return rawRatios.map((rawValue, index) => {
+        const openValue = openRatios[index];
+        const midValue = midRatios[index];
+        const closeValue = closeRatios[index];
+        const mode = calibrationModeForServo(openValue, midValue, closeValue);
+        if (mode === "bad") return clamp(rawValue, 0, 1);
+        if (mode === "2pt") {
+          const span = closeValue - openValue;
+          return Math.abs(span) < 1e-6 ? clamp(rawValue, 0, 1) : clamp((rawValue - openValue) / span, 0, 1);
+        }
+        const lowSpan = midValue - openValue;
+        const highSpan = closeValue - midValue;
+        if (rawValue <= midValue) {
+          return Math.abs(lowSpan) < 1e-6 ? 0.5 : 0.5 * clamp((rawValue - openValue) / lowSpan, 0, 1);
+        }
+        return Math.abs(highSpan) < 1e-6 ? 1 : 0.5 + 0.5 * clamp((rawValue - midValue) / highSpan, 0, 1);
+      }).map((value) => clamp(value, 0, 1));
+    }
+
+    function directDriveRatios(closeRatios) {
+      return closeRatios.map((value, index) => clamp(value / DIRECT_CLOSE_SATURATION[index], 0, 1));
+    }
+
+    function ratiosToAngles(closeRatios) {
+      return closeRatios.map((value, index) => {
+        const angle = OPEN_ANGLE[index] + (CLOSED_ANGLE[index] - OPEN_ANGLE[index]) * clamp(value, 0, 1);
+        const [low, high] = LIMITS[index];
+        return clamp(Math.round(angle), low, high);
+      });
+    }
+
+    function stabilizeAngles(previousAngles, currentAngles, deadbands) {
+      if (!previousAngles) return currentAngles.map((value) => Math.round(value));
+      return currentAngles.map((value, index) =>
+        Math.abs(Math.round(value) - Math.round(previousAngles[index])) <= deadbands[index]
+          ? Math.round(previousAngles[index])
+          : Math.round(value)
+      );
+    }
+
+    function emaAngles(previous, current, alpha) {
+      if (!previous) return current.map((value) => Number(value));
+      return current.map((value, index) => Number(previous[index]) + alpha * (Number(value) - Number(previous[index])));
+    }
+
+    function medianFilterRatios(closeRatios, windowSize = 5) {
+      cvRatioHistory.push(closeRatios.map(Number));
+      while (cvRatioHistory.length > windowSize) cvRatioHistory.shift();
+      return closeRatios.map((_, index) => median(cvRatioHistory.map((sample) => sample[index])));
+    }
+
+    function resetCvState() {
+      cvRatioHistory = [];
+      cvFilteredAngles = null;
+      cvStableAngles = null;
+    }
+
+    function stopHandTrackingLoop() {
+      if (handTrackingTimer) {
+        window.cancelAnimationFrame(handTrackingTimer);
+      }
+      handTrackingTimer = null;
+      latestHandFrameTime = -1;
+    }
+
+    async function processHandTrackingFrame() {
+      if (!cameraStream || !handsDetector) return;
+      const video = $("cameraVideo");
+      if (video.readyState < 2) return;
+      const frameTime = video.currentTime;
+      if (frameTime === latestHandFrameTime) return;
+      latestHandFrameTime = frameTime;
+      await handsDetector.send({ image: video });
+    }
+
+    function startHandTrackingLoop() {
+      stopHandTrackingLoop();
+      const tick = async () => {
+        if (!cameraStream || !handsDetector) return;
+        try {
+          await processHandTrackingFrame();
+        } catch (error) {
+          setTrackingState(false, "Skeleton error");
+          log(`Skeleton error: ${error.message}`);
+        }
+        handTrackingTimer = window.requestAnimationFrame(tick);
+      };
+      handTrackingTimer = window.requestAnimationFrame(tick);
+    }
+
+    function drawHandSkeleton(results) {
+      resizeCameraCanvas();
+      const canvas = $("cameraCanvas");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const hands = results.multiHandLandmarks || [];
+      if (!hands.length) {
+        setTrackingState(false, "No hand");
+        return;
+      }
+
+      for (const landmarks of hands) {
+        if (window.drawConnectors) {
+          window.drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
+            color: "#42f59b",
+            lineWidth: 3,
+          });
+          window.drawLandmarks(ctx, landmarks, {
+            color: "#f8fffb",
+            fillColor: "#0f9f6e",
+            lineWidth: 1,
+            radius: 3,
+          });
+        }
+      }
+
+      const text = `${hands.length} hand${hands.length > 1 ? "s" : ""} tracked`;
+      setTrackingState(true, text);
+    }
+
+    function sendCvAngles(nextAngles) {
+      const sendEnabled = $("sendToggle").checked;
+      if (!sendEnabled || !armed || !connected || !cvConnected || !cvWs || cvWs.readyState !== WebSocket.OPEN) {
+        return;
+      }
+
+      const deadband = 1;
+      const changed = !cvLastSentAngles || nextAngles.some((value, index) => Math.abs(value - cvLastSentAngles[index]) > deadband);
+      if (!changed) return;
+
+      const hz = 35;
+      const now = performance.now();
+      if (!(now - cvLastSendAt >= 1000 / hz)) {
+        cvPendingAngles = [...nextAngles];
+        if (!cvFlushTimer) {
+          cvFlushTimer = setTimeout(() => {
+            cvFlushTimer = null;
+            if (cvPendingAngles) {
+              const copy = cvPendingAngles;
+              cvPendingAngles = null;
+              sendCvAngles(copy);
+            }
+          }, Math.max(1, (1000 / hz) - (now - cvLastSendAt)));
+        }
+        return;
+      }
+
+      try {
+        cvWs.send(makePacket(MODES.DIRECT, nextAngles));
+        cvLastSentAngles = [...nextAngles];
+        cvLastSendAt = now;
+        packetCount += 1;
+        updateHeaderState();
+      } catch (error) {
+        log(`CV send failed: ${error.message}`);
+        disconnectCvTransport();
+      }
+    }
+
+    function applyCvLive(results) {
+      if (!$("sendToggle").checked) return;
+      const handLandmarks = results.multiHandLandmarks || [];
+      if (!handLandmarks.length) return;
+
+      const worldHands = results.multiHandWorldLandmarks || [];
+      const poseLandmarks = extractPoseLandmarks(handLandmarks[0], worldHands[0]);
+      const rawCloseRatios = landmarksToCloseRatios(poseLandmarks);
+      const medianRatios = medianFilterRatios(rawCloseRatios, 5);
+      const normalizedRatios = normalizeCloseRatios(medianRatios, OPEN_CALIBRATION, MID_CALIBRATION, CLOSE_CALIBRATION);
+      const driveRatios = directDriveRatios(normalizedRatios);
+      const targetAngles = ratiosToAngles(driveRatios);
+      cvStableAngles = stabilizeAngles(cvStableAngles, targetAngles, REALTIME_TARGET_DEADBAND_DEG);
+      cvFilteredAngles = emaAngles(cvFilteredAngles, cvStableAngles, EMA_ALPHA);
+      const smoothedAngles = cvFilteredAngles.map((value) => Math.round(value));
+      sendCvAngles(smoothedAngles);
+    }
+
+    function handleHandResults(results) {
+      drawHandSkeleton(results);
+      applyCvLive(results);
+    }
+
+    async function ensureHandTracking() {
+      if (handsDetector) return handsDetector;
+      if (!handsInitPromise) {
+        handsInitPromise = (async () => {
+          if (!window.Hands) {
+            throw new Error("MediaPipe Hands script not loaded");
+          }
+          const detector = new window.Hands({
+            locateFile: (file) => `vendor/mediapipe/hands/${file}`,
+          });
+          detector.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.6,
+            minTrackingConfidence: 0.55,
+          });
+          detector.onResults(handleHandResults);
+          handsDetector = detector;
+          return detector;
+        })().catch((error) => {
+          handsInitPromise = null;
+          throw error;
+        });
+      }
+      return handsInitPromise;
+    }
+
+    async function enableSkeletonTracking() {
+      try {
+        setTrackingState(false, "Loading skeleton");
+        await ensureHandTracking();
+        if (cameraStream) {
+          resizeCameraCanvas();
+          startHandTrackingLoop();
+          setTrackingState(true, "Skeleton ready");
+        }
+      } catch (error) {
+        clearCameraCanvas();
+        setTrackingState(false, "Skeleton unavailable");
+        log(`Skeleton load failed: ${error.message}`);
+      }
+    }
+
+    function stopCamera() {
+      if (cameraFpsTimer) {
+        window.clearInterval(cameraFpsTimer);
+      }
+      if (cameraFrameTimer) {
+        window.cancelAnimationFrame(cameraFrameTimer);
+      }
+      stopHandTrackingLoop();
+      cameraFpsTimer = null;
+      cameraFrameTimer = null;
+      cameraFrameCount = 0;
+      cameraLastFrameCount = 0;
+
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+      }
+      cameraStream = null;
+      $("cameraVideo").srcObject = null;
+      $("cameraInfo").textContent = "No camera";
+      $("cameraFps").textContent = "0 FPS";
+      $("statusFps").textContent = "0";
+      $("statusCamera").textContent = "Off";
+      setTrackingState(false, "Skeleton off");
+      clearCameraCanvas();
+      resetCvState();
+    }
+
+    async function startCamera() {
+      try {
+        stopCamera();
+        setTrackingState(false, "Starting camera");
+        cameraStream = await navigator.mediaDevices.getUserMedia(selectedCameraConstraints());
+        $("cameraVideo").srcObject = cameraStream;
+        await $("cameraVideo").play();
+        updateCameraMirror();
+        const track = cameraStream.getVideoTracks()[0];
+        const settings = track ? track.getSettings() : {};
+        $("cameraInfo").textContent = `${settings.width || "?"}x${settings.height || "?"}`;
+        $("statusCamera").textContent = "Live";
+        resizeCameraCanvas();
+        countCameraFrame();
+        await enableSkeletonTracking();
+        cameraFpsTimer = window.setInterval(() => {
+          const fps = cameraFrameCount - cameraLastFrameCount;
+          cameraLastFrameCount = cameraFrameCount;
+          $("cameraFps").textContent = `${fps} FPS`;
+          $("statusFps").textContent = String(fps);
+        }, 1000);
+      } catch (error) {
+        stopCamera();
+        setTrackingState(false, "Skeleton unavailable");
+        log(`Camera error: ${error.message}`);
+      }
+    }
+
+    async function refreshCameraList() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        $("cameraSelect").innerHTML = `<option value="">Browser camera API unavailable</option>`;
+        return;
+      }
+
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter((device) => device.kind === "videoinput");
+        $("cameraSelect").innerHTML = "";
+        if (!cameras.length) {
+          $("cameraSelect").innerHTML = `<option value="">No camera found</option>`;
+          return;
+        }
+        cameras.forEach((camera, index) => {
+          const option = document.createElement("option");
+          option.value = camera.deviceId;
+          option.textContent = camera.label || `Camera ${index + 1}`;
+          $("cameraSelect").appendChild(option);
+        });
+      } catch (error) {
+        $("cameraSelect").innerHTML = `<option value="">Cannot read camera list</option>`;
+        log(`Camera list error: ${error.message}`);
+      }
+    }
+
+    function bindEvents() {
+      $("btnConnect").addEventListener("click", async () => {
+        await connectBridge();
+      });
+      $("btnDisconnect").addEventListener("click", () => {
+        connected = false;
+        armed = false;
+        disconnectCvTransport();
+        updateHeaderState();
+        log("Manual disconnect");
+      });
+      $("btnArm").addEventListener("click", async () => {
+        await armRobot();
+      });
+      $("btnDisarm").addEventListener("click", async () => {
+        await disarmRobot();
+      });
+      $("btnCameraStart").addEventListener("click", startCamera);
+      $("btnCameraStop").addEventListener("click", stopCamera);
+      $("btnCameraRefresh").addEventListener("click", refreshCameraList);
+      $("btnReload").addEventListener("click", () => window.location.reload());
+      $("cameraMirror").addEventListener("change", updateCameraMirror);
+      $("cameraQuality").addEventListener("change", () => {
+        if (cameraStream) startCamera();
+      });
+      $("cameraSelect").addEventListener("change", () => {
+        if (cameraStream) startCamera();
+      });
+      $("sendToggle").addEventListener("change", () => {
+        if (!$("sendToggle").checked) {
+          cvLastSentAngles = null;
+          cvPendingAngles = null;
+          log("Realtime send paused");
+        } else {
+          log("Realtime send resumed");
+        }
+      });
+    }
+
+    bindEvents();
+    updateCameraMirror();
+    updateHeaderState();
+    startBridgeStatusPolling();
+    refreshCameraList()
+      .then(() => startCamera())
+      .then(() => connectBridge())
+      .catch((error) => log(error.message));
+  </script>
+</body>
+</html>

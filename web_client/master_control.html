@@ -1,0 +1,2603 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Robot Hand Master Control</title>
+  <style>
+    :root {
+      --bg: #eef3f0;
+      --ink: #17211d;
+      --muted: #65746d;
+      --panel: rgba(255, 255, 255, 0.82);
+      --panel-strong: #ffffff;
+      --line: #cbd8d1;
+      --green: #0f9f6e;
+      --green-soft: #dff7eb;
+      --amber: #b7791f;
+      --amber-soft: #fff2cc;
+      --red: #c7372f;
+      --red-soft: #ffe4e0;
+      --blue: #2768b5;
+      --blue-soft: #dcecff;
+      --steel: #25312d;
+      --shadow: 0 18px 48px rgba(47, 65, 56, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Segoe UI", "Be Vietnam Pro", Tahoma, sans-serif;
+      background:
+        linear-gradient(135deg, rgba(15, 159, 110, 0.13), transparent 34%),
+        linear-gradient(315deg, rgba(39, 104, 181, 0.13), transparent 36%),
+        var(--bg);
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 10px 13px;
+      font-weight: 750;
+      color: var(--ink);
+      background: var(--panel-strong);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(47, 65, 56, 0.12);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.52;
+      transform: none;
+      box-shadow: none;
+    }
+
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 11px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--green);
+    }
+
+    .shell {
+      width: min(1440px, calc(100vw - 28px));
+      margin: 0 auto;
+      padding: 18px 0 28px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(280px, 560px);
+      gap: 14px;
+      align-items: center;
+      padding: 14px 0 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      border-radius: 10px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--steel), #456056);
+      box-shadow: var(--shadow);
+      font-weight: 900;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 25px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .subline {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .connectbar {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.68);
+      box-shadow: var(--shadow);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1.05fr 0.95fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      overflow: hidden;
+    }
+
+    .panel > header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.58);
+    }
+
+    .panel h2 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .panel-body {
+      padding: 14px;
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      min-height: 72px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .metric b {
+      display: block;
+      margin-top: 5px;
+      font-size: 19px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.75);
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--red);
+      box-shadow: 0 0 0 4px rgba(199, 55, 47, 0.13);
+    }
+
+    .dot.ok {
+      background: var(--green);
+      box-shadow: 0 0 0 4px rgba(15, 159, 110, 0.13);
+    }
+
+    .dot.warn {
+      background: var(--amber);
+      box-shadow: 0 0 0 4px rgba(183, 121, 31, 0.14);
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .btn-green { background: var(--green-soft); border-color: #9cdec0; color: #07573c; }
+    .btn-red { background: var(--red-soft); border-color: #ffb5ad; color: #8d1f19; }
+    .btn-blue { background: var(--blue-soft); border-color: #a9cdf4; color: #164d87; }
+    .btn-amber { background: var(--amber-soft); border-color: #f1d181; color: #7a4d0e; }
+    .btn-dark { background: #26332e; border-color: #26332e; color: #fff; }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 12px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .servo-card {
+      display: grid;
+      grid-template-columns: 106px 1fr 44px;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.64);
+      margin-bottom: 9px;
+    }
+
+    .servo-name {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .servo-name b {
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .servo-name span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .servo-value {
+      text-align: right;
+      font-weight: 850;
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .voice-stage {
+      display: grid;
+      gap: 12px;
+    }
+
+    .meter {
+      position: relative;
+      height: 18px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.74);
+    }
+
+    .meter-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green), var(--amber), var(--red));
+      transition: width 0.08s linear;
+    }
+
+    .toggle-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 42px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.64);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .toggle input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--green);
+    }
+
+    .log {
+      height: 235px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(18, 26, 23, 0.92);
+      color: #dcebe4;
+      padding: 10px;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .kbd {
+      display: inline-flex;
+      min-width: 22px;
+      justify-content: center;
+      border: 1px solid var(--line);
+      border-bottom-width: 2px;
+      border-radius: 6px;
+      padding: 2px 6px;
+      color: var(--ink);
+      background: #fff;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .command-list {
+      display: grid;
+      gap: 8px;
+      max-height: 278px;
+      overflow: auto;
+    }
+
+    .command-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.62);
+      font-size: 12px;
+    }
+
+    .command-item b {
+      white-space: nowrap;
+    }
+
+    .command-item span {
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .manual-command {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .camera-stage {
+      display: grid;
+      gap: 10px;
+    }
+
+    .camera-view {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #111a17;
+      aspect-ratio: 16 / 9;
+    }
+
+    .camera-view video {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: #111a17;
+    }
+
+    .camera-view canvas {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .camera-view.mirror video {
+      transform: scaleX(-1);
+    }
+
+    .camera-view.mirror canvas {
+      transform: scaleX(-1);
+    }
+
+    .camera-overlay {
+      position: absolute;
+      z-index: 3;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .camera-overlay span {
+      border-radius: 999px;
+      padding: 5px 8px;
+      color: #eaf6f0;
+      background: rgba(17, 26, 23, 0.72);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 1180px) {
+      .layout {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .layout .panel:last-child {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .shell {
+        width: min(100vw - 18px, 720px);
+      }
+
+      .topbar, .connectbar, .layout, .status-strip, .actions, .grid2, .toggle-row {
+        grid-template-columns: 1fr;
+      }
+
+      .servo-card {
+        grid-template-columns: 1fr 46px;
+      }
+
+      .servo-card input[type="range"] {
+        grid-column: 1 / -1;
+      }
+
+      .preset-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="topbar">
+      <div class="brand">
+        <div class="mark">RH</div>
+        <div>
+          <h1>Robot Hand Master Control</h1>
+          <div class="subline" id="lastCommand">Ready</div>
+        </div>
+      </div>
+
+      <div class="connectbar">
+        <input id="wsUrl" type="text" value="/api/send" placeholder="/api/send or ws://192.168.4.1:81" />
+        <label class="toggle" style="min-height: 42px;"><input id="simModeToggle" type="checkbox" /> Software-only</label>
+        <button id="btnConnect" class="btn-green">Connect</button>
+        <button id="btnDisconnect">Disconnect</button>
+      </div>
+    </section>
+
+    <section class="status-strip">
+      <div class="metric">
+        <span>WebSocket</span>
+        <b id="wsState"><span class="dot" id="wsDot"></span> Offline</b>
+      </div>
+      <div class="metric">
+        <span>ARM</span>
+        <b id="armState">DISARMED</b>
+      </div>
+      <div class="metric">
+        <span>Voice</span>
+        <b id="voiceState"><span class="dot" id="voiceDot"></span> Idle</b>
+      </div>
+      <div class="metric">
+        <span>Packet</span>
+        <b id="packetCount">0</b>
+      </div>
+    </section>
+
+    <section class="layout">
+      <article class="panel">
+        <header>
+          <h2>Core Control</h2>
+          <span class="pill"><span class="dot" id="safetyDot"></span><span id="safetyText">Locked</span></span>
+        </header>
+        <div class="panel-body">
+          <div class="actions">
+            <button id="btnArm" class="btn-green">ARM</button>
+            <button id="btnDisarm">DISARM</button>
+            <button id="btnOpen" class="btn-blue">OPEN</button>
+            <button id="btnClose" class="btn-amber">CLOSE</button>
+            <button id="btnEstop" class="btn-red">ESTOP</button>
+          </div>
+
+          <div class="field" style="margin-top: 16px;">
+            <label for="gripSlider">Grip percent</label>
+            <input id="gripSlider" type="range" min="0" max="100" value="0" />
+            <input id="gripNumber" type="number" min="0" max="100" value="0" />
+          </div>
+
+          <div class="preset-grid">
+            <button data-grip="0">Grip 0</button>
+            <button data-grip="25">Grip 25</button>
+            <button data-grip="50">Grip 50</button>
+            <button data-grip="75">Grip 75</button>
+            <button data-grip="100" class="btn-amber">Grip 100</button>
+            <button id="btnHold" class="btn-dark">HOLD</button>
+          </div>
+
+          <div class="grid2" style="margin-top: 16px;">
+            <div class="field">
+              <label for="sendHz">Send throttle</label>
+              <select id="sendHz">
+                <option value="0">Instant</option>
+                <option value="20">20 Hz</option>
+                <option value="35" selected>35 Hz</option>
+                <option value="50">50 Hz</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="deadband">Deadband</label>
+              <select id="deadband">
+                <option value="0">0 deg</option>
+                <option value="1" selected>1 deg</option>
+                <option value="2">2 deg</option>
+                <option value="3">3 deg</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <header>
+          <h2>Servo Direct</h2>
+          <span class="pill" id="angleSummary">40 180 0 0 80</span>
+        </header>
+        <div class="panel-body">
+          <div id="servoList"></div>
+          <div class="preset-grid">
+            <button id="btnDirectOpen">Direct OPEN</button>
+            <button id="btnDirectMid">Direct MID</button>
+            <button id="btnDirectClose" class="btn-amber">Direct CLOSE</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <header>
+          <h2>Realtime Camera</h2>
+          <span class="pill"><span class="dot" id="cameraDot"></span><span id="cameraState">Off</span></span>
+        </header>
+        <div class="panel-body camera-stage">
+          <div class="camera-view mirror" id="cameraView">
+            <video id="cameraVideo" autoplay muted playsinline></video>
+            <canvas id="cameraCanvas"></canvas>
+            <div class="camera-overlay">
+              <span id="cameraInfo">No camera</span>
+              <span id="cameraFps">0 FPS</span>
+              <span id="cameraSkeleton">Skeleton off</span>
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label for="cameraSelect">Camera source</label>
+              <select id="cameraSelect"></select>
+            </div>
+            <div class="field">
+              <label for="cameraQuality">Quality</label>
+              <select id="cameraQuality">
+                <option value="640x360" selected>640 x 360</option>
+                <option value="854x480">854 x 480</option>
+                <option value="1280x720">1280 x 720</option>
+              </select>
+            </div>
+          </div>
+          <div class="actions" style="grid-template-columns: repeat(3, 1fr);">
+            <button id="btnCameraStart" class="btn-green">Cam ON</button>
+            <button id="btnCameraStop">Cam OFF</button>
+            <button id="btnCameraRefresh" class="btn-blue">Refresh</button>
+          </div>
+          <div class="actions" style="grid-template-columns: repeat(2, 1fr);">
+            <button id="btnCvLiveStart" class="btn-green">CV Live ON</button>
+            <button id="btnCvLiveStop">CV Live OFF</button>
+          </div>
+          <label class="toggle"><input id="cvSendToggle" type="checkbox" checked /> Send skeleton realtime to robot</label>
+          <label class="toggle"><input id="cameraMirror" type="checkbox" checked /> Mirror preview</label>
+        </div>
+      </article>
+
+      <article class="panel">
+        <header>
+          <h2>Voice Command</h2>
+          <span class="pill"><span class="dot warn" id="noiseDot"></span><span id="noiseLabel">Noise idle</span></span>
+        </header>
+        <div class="panel-body voice-stage">
+          <div class="actions" style="grid-template-columns: repeat(3, 1fr);">
+            <button id="btnVoiceStart" class="btn-green">Mic ON</button>
+            <button id="btnVoiceStop">Mic OFF</button>
+            <button id="btnCalNoise" class="btn-blue">Cal Noise</button>
+          </div>
+
+          <div class="meter"><div class="meter-fill" id="meterFill"></div></div>
+          <input id="confidenceGate" type="hidden" value="0.35" />
+
+          <div class="grid2">
+            <div class="field">
+              <label for="offlineMicDevice">Mic device</label>
+              <select id="offlineMicDevice"></select>
+            </div>
+            <div class="field">
+              <label for="noiseGate">Noise gate</label>
+              <input id="noiseGate" type="range" min="0.005" max="0.15" step="0.005" value="0.035" />
+            </div>
+          </div>
+
+          <div class="toggle-row">
+            <label class="toggle"><input id="offlineUseLlm" type="checkbox" checked /> Use Ollama local</label>
+            <label class="toggle"><input id="wakeWordToggle" type="checkbox" checked /> Wake word</label>
+          </div>
+
+          <div class="field">
+            <label for="offlineModelPreset">Speech model preset</label>
+            <select id="offlineModelPreset">
+              <option value="">Custom path</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="offlineModelPath">Vosk model path</label>
+            <input id="offlineModelPath" type="text" value="../models/vosk-model-small-vn-0.4" />
+          </div>
+
+          <div class="toggle-row">
+            <label class="toggle"><input id="confirmDangerToggle" type="checkbox" checked /> Confirm ESTOP</label>
+            <div class="toggle" id="offlinePipeStatus">Commands route directly to robot bridge</div>
+          </div>
+
+          <div class="grid2">
+            <div class="field">
+              <label for="offlineOllamaModel">Ollama model</label>
+              <input id="offlineOllamaModel" type="text" value="qwen2.5:3b" />
+            </div>
+            <div class="field">
+              <label for="offlineOllamaUrl">Ollama URL</label>
+              <input id="offlineOllamaUrl" type="text" value="http://127.0.0.1:11434/api/generate" />
+            </div>
+          </div>
+
+          <div class="grid2">
+            <div class="field">
+              <label>STT</label>
+              <div class="toggle" id="offlineSttStatus">Checking...</div>
+            </div>
+            <div class="field">
+              <label>LLM</label>
+              <div class="toggle" id="offlineLlmStatus">Checking...</div>
+            </div>
+          </div>
+
+          <div class="grid2">
+            <div class="field">
+              <label>Mic selected</label>
+              <div class="toggle" id="offlineMicStatus">Unknown</div>
+            </div>
+            <div class="field">
+              <label>Model file</label>
+              <div class="toggle" id="offlineModelStatus">Unknown</div>
+            </div>
+          </div>
+
+          <div class="manual-command">
+            <input id="manualVoiceText" type="text" placeholder="robot mở tay" />
+            <button id="btnRunText" class="btn-blue">Run</button>
+          </div>
+
+          <div class="log" id="voiceLog"></div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <header>
+          <h2>Voice Map</h2>
+          <span class="pill"><span class="kbd">Space</span> PTT</span>
+        </header>
+        <div class="panel-body">
+          <div class="command-list" id="commandList"></div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script src="vendor/mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="vendor/mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script src="vendor/mediapipe/hands/hands.js"></script>
+  <script>
+    const WS_URL_DEFAULT = "/api/send";
+    const CV_WS_URL_DEFAULT = "ws://127.0.0.1:8765";
+    const ESP_DIRECT_URL = "ws://192.168.4.1:81";
+    const OPEN_ANGLE = [170, 180, 0, 0, 0, 180];
+    const CLOSED_ANGLE = [40, 0, 180, 180, 180, 0];
+    const SERVO_LABELS = [
+      ["S0", "thumb curl", "ngón cái gập"],
+      ["S1", "index", "ngón trỏ"],
+      ["S2", "middle", "ngón giữa"],
+      ["S3", "ring", "áp út"],
+      ["S4", "thumb oppose", "ngón cái oppose (D8)"],
+      ["S5", "pinky", "ngón út (D7)"],
+    ];
+    const LIMITS = [[40, 170], [0, 180], [0, 180], [0, 180], [0, 180], [0, 180]];
+    const MODES = {
+      DIRECT: 0x01,
+      GRIP: 0x02,
+      ARM: 0x10,
+      DISARM: 0x11,
+      ESTOP: 0x12,
+      OPEN: 0x13,
+      CLOSE: 0x14,
+    };
+    const EMA_ALPHA = 0.45;
+    const REALTIME_TARGET_DEADBAND_DEG = [1, 1, 1, 1, 2, 1];
+    const DIRECT_CLOSE_SATURATION = [0.95, 0.95, 0.86, 0.82, 0.78, 0.85];
+    const OPEN_CALIBRATION = [0.050844, 0.184278, 0.194668, 0.147079, 0.021921, 0.05];
+    const MID_CALIBRATION = [0.223596, 0.446297, 0.442266, 0.468776, 0.590821, 0.40];
+    const CLOSE_CALIBRATION = [0.372126, 0.745904, 0.76798, 0.841377, 0.714515, 0.75];
+    const GESTURE_PRESETS = {
+      open: { angles: [...OPEN_ANGLE], label: "OPEN PALM" },
+      fist: { angles: [...CLOSED_ANGLE], label: "FIST" },
+      like: { angles: [170, 0, 180, 180, 0, 0], label: "LIKE" },
+      point: { angles: [40, 180, 180, 180, 180, 0], label: "POINT" },
+      peace: { angles: [40, 180, 0, 180, 180, 0], label: "PEACE" },
+      gun: { angles: [170, 180, 180, 180, 0, 0], label: "FINGER GUN" },
+      ok: { angles: [80, 45, 0, 0, 100, 180], label: "OK SIGN" },
+      claw: { angles: [90, 100, 95, 95, 100, 95], label: "CLAW" },
+      relax: { angles: [150, 145, 36, 36, 35, 145], label: "RELAX" },
+      three: { angles: [40, 180, 0, 0, 180, 0], label: "THREE" },
+      pinch: { angles: [80, 70, 0, 0, 150, 180], label: "PINCH" },
+      power: { angles: [40, 0, 180, 180, 180, 0], label: "POWER GRIP" },
+    };
+    const GESTURE_ALIASES = {
+      like: ["like", "thumbs up", "ra dau like", "lam like", "bieu tuong like"],
+      point: ["point", "chi", "chi tay", "chi tro", "pointing"],
+      peace: ["peace", "victory", "v sign", "chu v", "hoa binh", "hai ngon"],
+      gun: ["gun", "finger gun", "ban sung", "pistol"],
+      ok: ["ok", "okay", "dong y", "ra dau ok", "bieu tuong ok"],
+      claw: ["claw", "vuot", "mong vuot", "ban tay cong", "gap nua"],
+      relax: ["relax", "tha long", "nghi", "thu gian"],
+      three: ["three", "so ba", "ba ngon"],
+      pinch: ["pinch", "kep nhe", "chim tay"],
+      power: ["power grip", "kep manh", "nam chat", "grip manh"],
+      open: ["open palm", "long ban tay", "xoe tay"],
+      fist: ["fist", "nam dam", "qua dam"],
+    };
+    const ROUTINE_ALIASES = {
+      wave: ["wave", "hello", "chao", "xin chao", "say hi"],
+      demo: ["demo", "trinh dien", "showtime", "biet dien"],
+      count: ["count", "dem so", "show number", "ra so"],
+    };
+    const COMMAND_HELP = [
+      ["robot arm", "ARM servo"],
+      ["robot disarm", "DISARM servo"],
+      ["robot mở tay", "OPEN"],
+      ["robot nắm tay", "CLOSE"],
+      ["robot dừng khẩn cấp", "ESTOP"],
+      ["robot grip 50", "GRIP percent"],
+      ["robot like", "gesture LIKE"],
+      ["robot peace", "gesture PEACE"],
+      ["robot ok", "gesture OK SIGN"],
+      ["robot point", "gesture POINT"],
+      ["robot finger gun", "gesture FINGER GUN"],
+      ["robot claw", "gesture CLAW"],
+      ["robot relax", "gesture RELAX"],
+      ["robot wave", "routine WAVE"],
+      ["robot demo", "routine DEMO"],
+      ["robot dem so 3", "routine COUNT THREE"],
+      ["robot mở ngón trỏ", "S1 về OPEN"],
+      ["robot đóng ngón giữa", "S2 về CLOSE"],
+      ["robot ngón cái 60", "đặt servo ngón cái theo %"],
+      ["robot hold", "giữ góc hiện tại"],
+    ];
+
+    let ws = null;
+    let connected = false;
+    let connecting = false;
+    let cvWs = null;
+    let cvConnected = false;
+    let cvConnecting = false;
+    let httpBridge = false;
+    let httpSendUrl = WS_URL_DEFAULT;
+    let armed = false;
+    let packetCount = 0;
+    let currentAngles = [...OPEN_ANGLE];
+    let lastSentAngles = null;
+    let lastSendAt = 0;
+    let pendingAngles = null;
+    let flushTimer = null;
+    let cvLastSentAngles = null;
+    let cvLastSendAt = 0;
+    let cvPendingAngles = null;
+    let cvFlushTimer = null;
+    let audioContext = null;
+    let analyser = null;
+    let micStream = null;
+    let meterTimer = null;
+    let recognition = null;
+    let listening = false;
+    let voiceReadyUntil = 0;
+    let noiseFloor = 0.015;
+    let lastCommandKey = "";
+    let lastCommandAt = 0;
+    let awaitingEstopConfirm = false;
+    let cameraStream = null;
+    let cameraFpsTimer = null;
+    let cameraFrameTimer = null;
+    let cameraFrameCount = 0;
+    let cameraLastFrameCount = 0;
+    let httpSendQueue = Promise.resolve();
+    let handTrackingTimer = null;
+    let handsDetector = null;
+    let handsInitPromise = null;
+    let latestHandFrameTime = -1;
+    let cvLiveEnabled = false;
+    let cvRatioHistory = [];
+    let cvFilteredAngles = null;
+    let cvStableAngles = null;
+    let cvPoseMetricLabel = "No hand";
+    let bridgeStatusTimer = null;
+    let offlineVoiceTimer = null;
+    let offlineVoiceLogCache = "";
+    let simulateMode = false;
+
+    const HAND_CONNECTIONS = [
+      [0, 1], [1, 2], [2, 3], [3, 4],
+      [0, 5], [5, 6], [6, 7], [7, 8],
+      [5, 9], [9, 10], [10, 11], [11, 12],
+      [9, 13], [13, 14], [14, 15], [15, 16],
+      [13, 17], [17, 18], [18, 19], [19, 20],
+      [0, 17],
+    ];
+
+    const $ = (id) => document.getElementById(id);
+
+    function checksumXor(bytes) {
+      return bytes.reduce((acc, value) => acc ^ (value & 0xff), 0);
+    }
+
+    function clamp(value, low, high) {
+      return Math.max(low, Math.min(high, value));
+    }
+
+    function makePacket(mode, payload = []) {
+      const frame = new Uint8Array(9);
+      frame[0] = 0xaa;
+      frame[1] = mode & 0xff;
+      for (let i = 0; i < Math.min(6, payload.length); i++) {
+        frame[2 + i] = Math.max(0, Math.min(255, Math.round(payload[i]))) & 0xff;
+      }
+      frame[8] = checksumXor(Array.from(frame.slice(0, 8)));
+      return frame;
+    }
+
+    function log(message, tone = "info") {
+      const now = new Date().toLocaleTimeString();
+      const line = document.createElement("div");
+      line.textContent = `[${now}] ${message}`;
+      if (tone === "bad") line.style.color = "#ffb1aa";
+      if (tone === "ok") line.style.color = "#a9f5cd";
+      if (tone === "warn") line.style.color = "#ffe08a";
+      $("voiceLog").prepend(line);
+    }
+
+    async function fetchJson(url, options = {}) {
+      const response = await fetch(url, options);
+      const payload = await response.json();
+      if (!response.ok || payload.ok === false) {
+        throw new Error(payload.error || response.statusText);
+      }
+      return payload;
+    }
+
+    function setLastCommand(text) {
+      $("lastCommand").textContent = text;
+    }
+
+    function setConnectButtonBusy(busy) {
+      $("btnConnect").disabled = busy;
+      $("btnConnect").textContent = busy ? "Connecting..." : "Connect";
+    }
+
+    function renderMetricState(metricId, dotId, stateClass, stateText) {
+      const metric = $(metricId);
+      if (!metric) return;
+      metric.innerHTML = `<span class="${stateClass}" id="${dotId}"></span> ${stateText}`;
+    }
+
+    function updateConnectionUi() {
+      const stateClass = connected ? "dot ok" : (connecting ? "dot warn" : "dot");
+      const stateText = simulateMode
+        ? (connected ? "Software-only Online" : "Software-only")
+        : (connected ? "Online" : (connecting ? "Connecting" : "Offline"));
+      renderMetricState("wsState", "wsDot", stateClass, stateText);
+      $("armState").textContent = armed ? "ARMED" : "DISARMED";
+      $("safetyDot").className = armed ? "dot ok" : "dot";
+      $("safetyText").textContent = armed ? "Live" : "Locked";
+      $("packetCount").textContent = String(packetCount);
+      $("simModeToggle").checked = simulateMode;
+      setConnectButtonBusy(connecting);
+    }
+
+    function isHttpBridgeTarget(value) {
+      return value.startsWith("/") || value.startsWith("http://") || value.startsWith("https://");
+    }
+
+    function isLocalDashboardHost() {
+      const host = String(window.location.hostname || "").toLowerCase();
+      return host === "127.0.0.1" || host === "localhost";
+    }
+
+    function shouldPreferHttpBridgeForCv() {
+      const target = normalizeConnectTarget($("wsUrl").value);
+      return isLocalDashboardHost() && !isHttpBridgeTarget(target);
+    }
+
+    function buildBridgeStatusUrl(sendUrl, connectNow = false) {
+      const suffix = connectNow ? "/api/status?connect=1" : "/api/status";
+      return sendUrl.replace(/\/api\/send\/?$/, suffix);
+    }
+
+    async function syncBridgeStatus(connectNow = false, writeLog = false) {
+      const rawTarget = normalizeConnectTarget($("wsUrl").value);
+      if (!isHttpBridgeTarget(rawTarget)) return false;
+
+      httpBridge = true;
+      httpSendUrl = new URL(rawTarget, window.location.href).href;
+
+      if (connectNow) {
+        connecting = true;
+        updateConnectionUi();
+      }
+
+      try {
+        const statusUrl = buildBridgeStatusUrl(httpSendUrl, connectNow);
+        const response = await fetch(statusUrl, { cache: "no-store" });
+        const result = await response.json();
+        simulateMode = Boolean(result.simulate);
+        connected = Boolean(response.ok && result.ok && result.connected);
+        packetCount = Number(result.sent_count || packetCount || 0);
+        connecting = false;
+        if (writeLog) {
+          const detail = result.last_error ? ` (${result.last_error})` : "";
+          const readyText = simulateMode
+            ? "Software-only bridge ready"
+            : `HTTP bridge ready -> ${result.esp_url}`;
+          const badText = simulateMode
+            ? `Software-only bridge not ready${detail}`
+            : `HTTP bridge not ready${detail}`;
+          log(connected ? readyText : badText, connected ? "ok" : "bad");
+          setLastCommand(connected ? readyText : `${badText || ""}`);
+        }
+        updateConnectionUi();
+        return connected;
+      } catch (error) {
+        connected = false;
+        connecting = false;
+        if (writeLog) {
+          log(`HTTP bridge error: ${error.message}`, "bad");
+          setLastCommand(`HTTP bridge error: ${error.message}`);
+        }
+        updateConnectionUi();
+        return false;
+      }
+    }
+
+    function startBridgeStatusPolling() {
+      if (bridgeStatusTimer) return;
+      bridgeStatusTimer = window.setInterval(() => {
+        const rawTarget = normalizeConnectTarget($("wsUrl").value);
+        if (!isHttpBridgeTarget(rawTarget)) return;
+        syncBridgeStatus(false, false).catch(() => {});
+      }, 2000);
+    }
+
+    async function setSimulationMode(enabled) {
+      const payload = await fetchJson("/api/sim-mode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      simulateMode = Boolean(payload.simulate);
+      connected = Boolean(payload.connected);
+      packetCount = Number(payload.sent_count || 0);
+      updateConnectionUi();
+      log(simulateMode ? "Software-only mode enabled" : "Software-only mode disabled", "warn");
+      setLastCommand(simulateMode ? "Software-only mode enabled" : "Software-only mode disabled");
+      return payload;
+    }
+
+    function sendPacket(mode, payload = [], label = "packet") {
+      const target = normalizeConnectTarget($("wsUrl").value);
+      if (isHttpBridgeTarget(target)) {
+        httpBridge = true;
+        httpSendUrl = new URL(target, window.location.href).href;
+      }
+      if (httpBridge) {
+        sendHttpPacket(mode, payload, label);
+        return true;
+      }
+      if (!connected || !ws || ws.readyState !== WebSocket.OPEN) {
+        log(`WS offline: ${label}`, "warn");
+        return false;
+      }
+      ws.send(makePacket(mode, payload));
+      packetCount += 1;
+      setLastCommand(label);
+      updateConnectionUi();
+      return true;
+    }
+
+    async function sendHttpPacket(mode, payload = [], label = "packet") {
+      httpSendQueue = httpSendQueue
+        .catch(() => {})
+        .then(async () => {
+          if (!connected) {
+            const recovered = await syncBridgeStatus(true, false);
+            if (!recovered) {
+              log(`Bridge offline: ${label}`, "warn");
+              return;
+            }
+          }
+          try {
+            const response = await fetch(httpSendUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ mode, payload }),
+            });
+            const result = await response.json();
+            if (!response.ok || !result.ok) {
+              connected = false;
+              armed = false;
+              log(`Bridge send failed: ${result.error || response.statusText}`, "bad");
+              updateConnectionUi();
+              return;
+            }
+            packetCount += 1;
+            setLastCommand(label);
+            updateConnectionUi();
+          } catch (error) {
+            connected = false;
+            armed = false;
+            log(`Bridge HTTP error: ${error.message}`, "bad");
+            updateConnectionUi();
+          }
+        });
+      return httpSendQueue;
+    }
+
+    function normalizeConnectTarget(rawValue) {
+      const value = String(rawValue || "").trim();
+      if (!value) return WS_URL_DEFAULT;
+      if (value.startsWith("/") || value.startsWith("http://") || value.startsWith("https://") || value.startsWith("ws://") || value.startsWith("wss://")) {
+        return value;
+      }
+      if (/^\d+\.\d+\.\d+\.\d+$/.test(value)) {
+        return `ws://${value}:81`;
+      }
+      if (/^\d+\.\d+\.\d+\.\d+:\d+$/.test(value) || /^[a-z0-9.-]+:\d+$/i.test(value)) {
+        return `ws://${value}`;
+      }
+      return value;
+    }
+
+    async function connect() {
+      disconnect(false);
+      const url = normalizeConnectTarget($("wsUrl").value);
+      $("wsUrl").value = url;
+      setLastCommand(`Connect -> ${url}`);
+      if (isHttpBridgeTarget(url)) {
+        httpBridge = true;
+        httpSendUrl = new URL(url, window.location.href).href;
+        log(`Checking HTTP bridge ${httpSendUrl}`, "warn");
+        await syncBridgeStatus(true, true);
+        return;
+      }
+      httpBridge = false;
+      connecting = true;
+      updateConnectionUi();
+      log(`Connecting ${url}`, "warn");
+      try {
+        ws = new WebSocket(url);
+      } catch (error) {
+        connecting = false;
+        log(`Invalid WebSocket URL: ${error.message}`, "bad");
+        updateConnectionUi();
+        return;
+      }
+      const activeSocket = ws;
+      activeSocket.binaryType = "arraybuffer";
+      activeSocket.onopen = () => {
+        if (ws !== activeSocket) return;
+        connected = true;
+        connecting = false;
+        log(`Connected ${url}`, "ok");
+        setLastCommand(`Connected -> ${url}`);
+        updateConnectionUi();
+      };
+      activeSocket.onclose = (event) => {
+        if (ws !== activeSocket) return;
+        connected = false;
+        connecting = false;
+        armed = false;
+        const detail = event.code ? ` code=${event.code}` : "";
+        log(`Disconnected${detail}`, "warn");
+        setLastCommand(`Disconnected${detail}`);
+        ws = null;
+        updateConnectionUi();
+      };
+      activeSocket.onerror = () => {
+        if (ws !== activeSocket) return;
+        connected = false;
+        connecting = false;
+        log("WebSocket error. Check PC Wi-Fi is RobotHand_ESP32 and ESP32 log shows WS PORT 81.", "bad");
+        setLastCommand(`WebSocket error -> ${url}`);
+        updateConnectionUi();
+      };
+    }
+
+    function disconnect(writeLog = true) {
+      const activeSocket = ws;
+      ws = null;
+      connected = false;
+      connecting = false;
+      httpBridge = false;
+      armed = false;
+      if (activeSocket) {
+        activeSocket.onopen = null;
+        activeSocket.onclose = null;
+        activeSocket.onerror = null;
+        try { activeSocket.close(); } catch (_) {}
+      }
+      if (writeLog) {
+        log("Manual disconnect", "warn");
+        setLastCommand("Manual disconnect");
+      }
+      updateConnectionUi();
+    }
+
+    function disconnectCvTransport(writeLog = false) {
+      const activeSocket = cvWs;
+      cvWs = null;
+      cvConnected = false;
+      cvConnecting = false;
+      cvLastSentAngles = null;
+      cvLastSendAt = 0;
+      cvPendingAngles = null;
+      if (cvFlushTimer) {
+        window.clearTimeout(cvFlushTimer);
+        cvFlushTimer = null;
+      }
+      if (activeSocket) {
+        activeSocket.onopen = null;
+        activeSocket.onclose = null;
+        activeSocket.onerror = null;
+        try { activeSocket.close(); } catch (_) {}
+      }
+      if (writeLog) {
+        log("CV transport disconnected", "warn");
+      }
+    }
+
+    async function connectCvTransport() {
+      if (cvConnected && cvWs && cvWs.readyState === WebSocket.OPEN) return true;
+      if (cvConnecting) return false;
+
+      const url = isLocalDashboardHost() ? CV_WS_URL_DEFAULT : ESP_DIRECT_URL;
+      cvConnecting = true;
+      log(`Connecting CV transport ${url}`, "warn");
+
+      return await new Promise((resolve) => {
+        let opened = false;
+        try {
+          cvWs = new WebSocket(url);
+        } catch (error) {
+          cvConnecting = false;
+          cvConnected = false;
+          log(`CV transport invalid URL: ${error.message}`, "bad");
+          resolve(false);
+          return;
+        }
+
+        const activeSocket = cvWs;
+        activeSocket.binaryType = "arraybuffer";
+        activeSocket.onopen = () => {
+          if (cvWs !== activeSocket) return;
+          opened = true;
+          cvConnected = true;
+          cvConnecting = false;
+          log(`CV transport ready -> ${url}`, "ok");
+          resolve(true);
+        };
+        activeSocket.onclose = () => {
+          if (cvWs !== activeSocket) return;
+          cvWs = null;
+          cvConnected = false;
+          cvConnecting = false;
+          if (opened) {
+            log("CV transport disconnected", "warn");
+          }
+        };
+        activeSocket.onerror = () => {
+          if (cvWs !== activeSocket) return;
+          cvConnected = false;
+          cvConnecting = false;
+          log("CV transport error", "bad");
+          if (!opened) resolve(false);
+        };
+      });
+    }
+
+    function sendControl(name) {
+      const mode = MODES[name];
+      if (sendPacket(mode, [], name)) {
+        if (name === "ARM") armed = true;
+        if (["DISARM", "ESTOP"].includes(name)) armed = false;
+        updateConnectionUi();
+      }
+    }
+
+    function anglesFromGrip(percent) {
+      const ratio = Math.max(0, Math.min(100, Number(percent))) / 100;
+      return OPEN_ANGLE.map((open, i) => Math.round(open + (CLOSED_ANGLE[i] - open) * ratio));
+    }
+
+    function shouldSendAngles(nextAngles) {
+      const deadband = Number($("deadband").value);
+      if (!lastSentAngles) return true;
+      return nextAngles.some((value, index) => Math.abs(value - lastSentAngles[index]) > deadband);
+    }
+
+    function sendAngles(nextAngles, label = "DIRECT") {
+      currentAngles = nextAngles.map((value, index) => {
+        const [low, high] = LIMITS[index];
+        return Math.max(low, Math.min(high, Math.round(value)));
+      });
+      renderServoValues();
+
+      if (!shouldSendAngles(currentAngles)) return;
+
+      const hz = Number($("sendHz").value);
+      const now = performance.now();
+      if (hz <= 0 || now - lastSendAt >= 1000 / hz) {
+        if (sendPacket(MODES.DIRECT, currentAngles, `${label}: ${currentAngles.join(" ")}`)) {
+          lastSentAngles = [...currentAngles];
+          lastSendAt = now;
+        }
+        return;
+      }
+
+      pendingAngles = [...currentAngles];
+      if (!flushTimer) {
+        flushTimer = setTimeout(() => {
+          flushTimer = null;
+          if (pendingAngles) {
+            const copy = pendingAngles;
+            pendingAngles = null;
+            sendAngles(copy, label);
+          }
+        }, Math.max(1, (1000 / hz) - (now - lastSendAt)));
+      }
+    }
+
+    function sendCvAngles(nextAngles, label = "CV") {
+      currentAngles = nextAngles.map((value, index) => {
+        const [low, high] = LIMITS[index];
+        return Math.max(low, Math.min(high, Math.round(value)));
+      });
+      renderServoValues();
+
+      const deadband = Number($("deadband").value);
+      const changed = !cvLastSentAngles || currentAngles.some((value, index) => Math.abs(value - cvLastSentAngles[index]) > deadband);
+      if (!changed) return;
+
+      const hz = Number($("sendHz").value);
+      const now = performance.now();
+      if (!(hz <= 0 || now - cvLastSendAt >= 1000 / hz)) {
+        cvPendingAngles = [...currentAngles];
+        if (!cvFlushTimer) {
+          cvFlushTimer = setTimeout(() => {
+            cvFlushTimer = null;
+            if (cvPendingAngles) {
+              const copy = cvPendingAngles;
+              cvPendingAngles = null;
+              sendCvAngles(copy, label);
+            }
+          }, Math.max(1, (1000 / hz) - (now - cvLastSendAt)));
+        }
+        return;
+      }
+
+      if (!cvConnected || !cvWs || cvWs.readyState !== WebSocket.OPEN) {
+        return;
+      }
+
+      try {
+        cvWs.send(makePacket(MODES.DIRECT, currentAngles));
+        cvLastSentAngles = [...currentAngles];
+        cvLastSendAt = now;
+        packetCount += 1;
+        setLastCommand(`${label}: ${currentAngles.join(" ")}`);
+        updateConnectionUi();
+      } catch (error) {
+        log(`CV send failed: ${error.message}`, "bad");
+        disconnectCvTransport(false);
+      }
+    }
+
+    function sendGrip(percent) {
+      const value = Math.max(0, Math.min(100, Math.round(Number(percent))));
+      $("gripSlider").value = value;
+      $("gripNumber").value = value;
+      if (sendPacket(MODES.GRIP, [value], `GRIP ${value}`)) {
+        currentAngles = anglesFromGrip(value);
+        renderServoValues();
+      }
+    }
+
+    function setServoPercent(index, percent) {
+      const ratio = Math.max(0, Math.min(100, Number(percent))) / 100;
+      const next = [...currentAngles];
+      next[index] = Math.round(OPEN_ANGLE[index] + (CLOSED_ANGLE[index] - OPEN_ANGLE[index]) * ratio);
+      sendAngles(next, `${SERVO_LABELS[index][0]} ${percent}%`);
+    }
+
+    function renderServoControls() {
+      $("servoList").innerHTML = "";
+      SERVO_LABELS.forEach((servo, index) => {
+        const card = document.createElement("div");
+        card.className = "servo-card";
+        card.innerHTML = `
+          <div class="servo-name">
+            <b>${servo[0]} ${servo[1]}</b>
+            <span>${servo[2]}</span>
+          </div>
+          <input id="servo${index}" type="range" min="${LIMITS[index][0]}" max="${LIMITS[index][1]}" value="${currentAngles[index]}" />
+          <div class="servo-value" id="servoValue${index}">${currentAngles[index]}</div>
+        `;
+        $("servoList").appendChild(card);
+        $(`servo${index}`).addEventListener("input", (event) => {
+          const next = [...currentAngles];
+          next[index] = Number(event.target.value);
+          sendAngles(next, `${servo[0]} direct`);
+        });
+      });
+    }
+
+    function renderServoValues() {
+      currentAngles.forEach((value, index) => {
+        const slider = $(`servo${index}`);
+        const output = $(`servoValue${index}`);
+        if (slider) slider.value = value;
+        if (output) output.textContent = String(value);
+      });
+      $("angleSummary").textContent = currentAngles.join(" ");
+    }
+
+    function normalizeText(input) {
+      return input
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\u0111/g, "d")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function parseNumber(text) {
+      const digit = text.match(/\b(100|[0-9]{1,2})\b/);
+      if (digit) return Number(digit[1]);
+      const words = {
+        "khong": 0, "mot": 1, "hai": 2, "ba": 3, "bon": 4, "nam": 5,
+        "sau": 6, "bay": 7, "tam": 8, "chin": 9, "muoi": 10,
+        "hai muoi lam": 25, "nam muoi": 50, "bay muoi lam": 75, "mot tram": 100
+      };
+      for (const [word, value] of Object.entries(words)) {
+        if (text.includes(word)) return value;
+      }
+      return null;
+    }
+
+    function fingerIndexFromText(text) {
+      if (text.includes("ngon cai") || text.includes("thumb")) return text.includes("oppos") || text.includes("doi") ? 4 : 0;
+      if (text.includes("tro") || text.includes("index")) return 1;
+      if (text.includes("giua") || text.includes("middle")) return 2;
+      if (text.includes("ap ut") || text.includes("ring")) return 3;
+      if (text.includes("ngon ut") || text.includes("pinky")) return 5;
+      return null;
+    }
+
+    function hasAnyPhrase(text, phrases) {
+      return phrases.some((phrase) => text.includes(phrase));
+    }
+
+    function gestureNameFromText(text) {
+      for (const [gestureName, aliases] of Object.entries(GESTURE_ALIASES)) {
+        if (hasAnyPhrase(text, aliases)) return gestureName;
+      }
+      return null;
+    }
+
+    function routineNameFromText(text) {
+      for (const [routineName, aliases] of Object.entries(ROUTINE_ALIASES)) {
+        if (hasAnyPhrase(text, aliases)) return routineName;
+      }
+      return null;
+    }
+
+    function applyGesturePreset(name, source = "Voice") {
+      const preset = GESTURE_PRESETS[name];
+      if (!preset) return false;
+      sendAngles([...preset.angles], preset.label);
+      log(`${source}: ${preset.label}`, "ok");
+      return true;
+    }
+
+    function scheduleGestureSequence(sequence, source = "Voice") {
+      let delayMs = 0;
+      for (const step of sequence) {
+        window.setTimeout(() => {
+          if (step.type === "gesture") {
+            applyGesturePreset(step.name, source);
+            return;
+          }
+          if (step.type === "grip") {
+            sendGrip(step.value);
+            log(`${source}: GRIP ${step.value}`, "ok");
+            return;
+          }
+          if (step.type === "control") {
+            sendControl(step.name);
+            log(`${source}: ${step.name}`, "ok");
+          }
+        }, delayMs);
+        delayMs += step.holdMs || 480;
+      }
+    }
+
+    function runVoiceRoutine(name, rawText) {
+      if (name === "wave") {
+        scheduleGestureSequence([
+          { type: "gesture", name: "open", holdMs: 380 },
+          { type: "gesture", name: "relax", holdMs: 320 },
+          { type: "gesture", name: "open", holdMs: 320 },
+          { type: "gesture", name: "relax", holdMs: 320 },
+          { type: "gesture", name: "open", holdMs: 320 },
+        ], "Voice");
+        log("Voice: WAVE routine", "ok");
+        return true;
+      }
+
+      if (name === "demo") {
+        scheduleGestureSequence([
+          { type: "gesture", name: "open", holdMs: 320 },
+          { type: "gesture", name: "like", holdMs: 380 },
+          { type: "gesture", name: "point", holdMs: 380 },
+          { type: "gesture", name: "peace", holdMs: 380 },
+          { type: "gesture", name: "ok", holdMs: 380 },
+          { type: "gesture", name: "fist", holdMs: 380 },
+          { type: "gesture", name: "open", holdMs: 320 },
+        ], "Voice");
+        log("Voice: DEMO routine", "ok");
+        return true;
+      }
+
+      if (name === "count") {
+        const value = parseNumber(rawText);
+        if (value === 1) return applyGesturePreset("point", "Voice");
+        if (value === 2) return applyGesturePreset("peace", "Voice");
+        if (value === 3) return applyGesturePreset("three", "Voice");
+        if (value === 4) return applyGesturePreset("open", "Voice");
+        if (value >= 5) return applyGesturePreset("open", "Voice");
+      }
+
+      return false;
+    }
+
+    function runVoiceCommand(rawText, confidence = 1, fromManual = false) {
+      const gate = Number($("confidenceGate").value);
+      const normalized = normalizeText(rawText);
+      if (!normalized) return;
+
+      if (!fromManual && confidence < gate) {
+        log(`Low confidence ${confidence.toFixed(2)}: ${rawText}`, "warn");
+        return;
+      }
+
+      if (!fromManual && Date.now() > voiceReadyUntil) {
+        log(`Noise gate rejected: ${rawText}`, "warn");
+        return;
+      }
+
+      let text = normalized;
+      const wakeWordOn = $("wakeWordToggle").checked;
+      if (wakeWordOn) {
+        const wakeWords = ["robot", "ro bot", "ban tay", "tay may", "may"];
+        const wake = wakeWords.find((word) => text.includes(word));
+        if (!wake) {
+          log(`No wake word: ${rawText}`, "warn");
+          return;
+        }
+        text = text.replace(wake, "").trim();
+      }
+
+      const commandKey = `${text}:${Math.round(confidence * 100)}`;
+      const now = Date.now();
+      if (!fromManual && commandKey === lastCommandKey && now - lastCommandAt < 1200) return;
+      lastCommandKey = commandKey;
+      lastCommandAt = now;
+
+      const routineName = routineNameFromText(text);
+      if (routineName && runVoiceRoutine(routineName, text)) {
+        return;
+      }
+
+      const gestureName = gestureNameFromText(text);
+      if (gestureName && applyGesturePreset(gestureName, "Voice")) {
+        return;
+      }
+
+      if (text.includes("xac nhan dung") || text.includes("confirm stop")) {
+        awaitingEstopConfirm = false;
+        sendControl("ESTOP");
+        log("Voice: ESTOP confirmed", "bad");
+        return;
+      }
+
+      if (text.includes("dung khan") || text.includes("estop") || text.includes("emergency")) {
+        if ($("confirmDangerToggle").checked) {
+          awaitingEstopConfirm = true;
+          log("Say 'robot xác nhận dừng' to ESTOP", "warn");
+          return;
+        }
+        sendControl("ESTOP");
+        log("Voice: ESTOP", "bad");
+        return;
+      }
+
+      if (text.includes("arm") || text.includes("kich hoat") || text.includes("bat servo")) {
+        sendControl("ARM");
+        log("Voice: ARM", "ok");
+        return;
+      }
+
+      if (text.includes("disarm") || text.includes("tat servo") || text.includes("khoa")) {
+        sendControl("DISARM");
+        log("Voice: DISARM", "ok");
+        return;
+      }
+
+      if (text.includes("mo tay") || text === "mo" || text.includes("open")) {
+        sendControl("OPEN");
+        currentAngles = [...OPEN_ANGLE];
+        renderServoValues();
+        log("Voice: OPEN", "ok");
+        return;
+      }
+
+      if (text.includes("nam tay") || text.includes("dong tay") || text.includes("close") || text.includes("fist")) {
+        sendControl("CLOSE");
+        currentAngles = [...CLOSED_ANGLE];
+        renderServoValues();
+        log("Voice: CLOSE", "ok");
+        return;
+      }
+
+      if (text.includes("hold") || text.includes("giu")) {
+        log("Voice: HOLD", "ok");
+        setLastCommand("HOLD");
+        return;
+      }
+
+      if (text.includes("grip") || text.includes("kep")) {
+        const value = parseNumber(text);
+        if (value !== null) {
+          sendGrip(value);
+          log(`Voice: GRIP ${value}`, "ok");
+          return;
+        }
+      }
+
+      const fingerIndex = fingerIndexFromText(text);
+      if (fingerIndex !== null) {
+        if (text.includes("mo")) {
+          const next = [...currentAngles];
+          next[fingerIndex] = OPEN_ANGLE[fingerIndex];
+          sendAngles(next, `${SERVO_LABELS[fingerIndex][0]} OPEN`);
+          log(`Voice: ${SERVO_LABELS[fingerIndex][0]} OPEN`, "ok");
+          return;
+        }
+        if (text.includes("dong") || text.includes("gap") || text.includes("nam")) {
+          const next = [...currentAngles];
+          next[fingerIndex] = CLOSED_ANGLE[fingerIndex];
+          sendAngles(next, `${SERVO_LABELS[fingerIndex][0]} CLOSE`);
+          log(`Voice: ${SERVO_LABELS[fingerIndex][0]} CLOSE`, "ok");
+          return;
+        }
+        const value = parseNumber(text);
+        if (value !== null) {
+          setServoPercent(fingerIndex, value);
+          log(`Voice: ${SERVO_LABELS[fingerIndex][0]} ${value}%`, "ok");
+          return;
+        }
+      }
+
+      log(`Unmapped: ${rawText}`, "warn");
+    }
+
+    async function startMicMeter() {
+      if (micStream) return;
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioContext.createMediaStreamSource(micStream);
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.72;
+      source.connect(analyser);
+      meterTimer = window.setInterval(updateMeter, 60);
+    }
+
+    function stopMicMeter() {
+      if (meterTimer) window.clearInterval(meterTimer);
+      meterTimer = null;
+      if (micStream) micStream.getTracks().forEach((track) => track.stop());
+      micStream = null;
+      if (audioContext) audioContext.close();
+      audioContext = null;
+      analyser = null;
+      $("meterFill").style.width = "0%";
+    }
+
+    function updateMeter() {
+      if (!analyser) return;
+      const data = new Float32Array(analyser.fftSize);
+      analyser.getFloatTimeDomainData(data);
+      let sum = 0;
+      for (const value of data) sum += value * value;
+      const rms = Math.sqrt(sum / data.length);
+      const gate = Math.max(Number($("noiseGate").value), noiseFloor * 2.6);
+      const pct = Math.max(0, Math.min(100, (rms / 0.18) * 100));
+      $("meterFill").style.width = `${pct}%`;
+      if (rms > gate) {
+        voiceReadyUntil = Date.now() + 1400;
+        $("noiseDot").className = "dot ok";
+        $("noiseLabel").textContent = "Voice";
+      } else {
+        $("noiseDot").className = "dot warn";
+        $("noiseLabel").textContent = "Noise idle";
+      }
+    }
+
+    async function calibrateNoise() {
+      await startMicMeter();
+      log("Noise calibration started", "warn");
+      const samples = [];
+      const start = Date.now();
+      while (Date.now() - start < 2200) {
+        await new Promise((resolve) => setTimeout(resolve, 80));
+        if (!analyser) continue;
+        const data = new Float32Array(analyser.fftSize);
+        analyser.getFloatTimeDomainData(data);
+        let sum = 0;
+        for (const value of data) sum += value * value;
+        samples.push(Math.sqrt(sum / data.length));
+      }
+      samples.sort((a, b) => a - b);
+      noiseFloor = samples[Math.floor(samples.length * 0.72)] || noiseFloor;
+      $("noiseGate").value = Math.max(0.005, Math.min(0.15, noiseFloor * 3)).toFixed(3);
+      log(`Noise floor ${noiseFloor.toFixed(4)}, gate ${$("noiseGate").value}`, "ok");
+    }
+
+    async function startVoice() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        log("SpeechRecognition is not available in this browser", "bad");
+        return;
+      }
+      await startMicMeter();
+      recognition = new SpeechRecognition();
+      recognition.lang = "vi-VN";
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 3;
+      recognition.onstart = () => {
+        listening = true;
+        renderMetricState("voiceState", "voiceDot", "dot ok", "Live");
+        log("Voice recognition started", "ok");
+      };
+      recognition.onend = () => {
+        listening = false;
+        renderMetricState("voiceState", "voiceDot", "dot", "Idle");
+        if (recognition) {
+          window.setTimeout(() => {
+            if (recognition && !listening) {
+              try { recognition.start(); } catch (_) {}
+            }
+          }, 350);
+        }
+      };
+      recognition.onerror = (event) => {
+        log(`Voice error: ${event.error}`, "warn");
+      };
+      recognition.onresult = (event) => {
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (!result.isFinal) continue;
+          const best = result[0];
+          log(`Heard: ${best.transcript} (${best.confidence ? best.confidence.toFixed(2) : "n/a"})`);
+          runVoiceCommand(best.transcript, best.confidence || 0.75);
+        }
+      };
+      try {
+        recognition.start();
+      } catch (error) {
+        log(`Voice start failed: ${error.message}`, "bad");
+      }
+    }
+
+    function stopVoice() {
+      if (recognition) {
+        const ref = recognition;
+        recognition = null;
+        try { ref.stop(); } catch (_) {}
+      }
+      listening = false;
+      renderMetricState("voiceState", "voiceDot", "dot", "Idle");
+      stopMicMeter();
+      log("Voice stopped", "warn");
+    }
+
+    function renderOfflineVoiceStatus(status) {
+      const active = Boolean(status.running && status.listening);
+      renderMetricState("voiceState", "voiceDot", active ? "dot ok" : "dot", active ? "Offline Live" : status.running ? "Starting" : "Idle");
+      $("btnVoiceStart").textContent = active ? "Offline ON" : "Mic ON";
+      $("btnVoiceStop").textContent = status.running ? "Offline OFF" : "Mic OFF";
+      $("noiseDot").className = status.ready ? "dot ok" : "dot warn";
+      $("noiseLabel").textContent = status.ready ? "Voice ready" : "Noise idle";
+      $("offlineSttStatus").textContent = status.stt_available ? `STT ready${status.available ? "" : " | deps missing"}` : `STT missing: ${(status.missing || []).join(", ") || "unknown"}`;
+      $("offlineLlmStatus").textContent = status.use_llm
+        ? (status.llm_available ? `LLM ready | ${status.ollama_model || "Ollama"}` : `LLM offline | ${status.ollama_error || "not ready"}`)
+        : "LLM disabled";
+      $("offlineMicStatus").textContent = status.input_device_name || "System default";
+      $("offlineModelStatus").textContent = status.model_exists ? "Model found" : "Model missing";
+      $("offlinePipeStatus").textContent = status.last_error
+        ? `Send error: ${status.last_error}`
+        : status.last_command
+          ? `Last command: ${status.last_command}`
+          : "Commands route directly to robot bridge";
+      if (typeof status.noise_gate === "number") {
+        $("noiseGate").value = Number(status.noise_gate).toFixed(3);
+      }
+      if ($("offlineModelPath") && document.activeElement !== $("offlineModelPath")) {
+        $("offlineModelPath").value = status.model_path || $("offlineModelPath").value;
+      }
+      if ($("offlineOllamaModel") && document.activeElement !== $("offlineOllamaModel")) {
+        $("offlineOllamaModel").value = status.ollama_model || $("offlineOllamaModel").value;
+      }
+      if ($("offlineOllamaUrl") && document.activeElement !== $("offlineOllamaUrl")) {
+        $("offlineOllamaUrl").value = status.ollama_url || $("offlineOllamaUrl").value;
+      }
+      if ($("offlineUseLlm")) {
+        $("offlineUseLlm").checked = Boolean(status.use_llm);
+      }
+      if ($("offlineMicDevice") && document.activeElement !== $("offlineMicDevice")) {
+        $("offlineMicDevice").value = status.input_device === null || status.input_device === undefined ? "" : String(status.input_device);
+      }
+      if (status.last_heard) {
+        $("manualVoiceText").placeholder = status.last_heard;
+      }
+      const nextLog = Array.isArray(status.logs) ? status.logs.join("\n") : "";
+      if (nextLog && nextLog !== offlineVoiceLogCache) {
+        $("voiceLog").textContent = nextLog;
+        offlineVoiceLogCache = nextLog;
+      }
+    }
+
+    async function loadOfflineVoiceDevices() {
+      try {
+        const payload = await fetchJson("/api/offline-voice/devices", { cache: "no-store" });
+        const select = $("offlineMicDevice");
+        select.innerHTML = "";
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.textContent = "System default microphone";
+        select.appendChild(defaultOption);
+        for (const device of payload.devices || []) {
+          const option = document.createElement("option");
+          option.value = String(device.index);
+          option.textContent = `${device.index}: ${device.name}`;
+          select.appendChild(option);
+        }
+      } catch (error) {
+        log(`Offline device list error: ${error.message}`, "warn");
+      }
+    }
+
+    async function loadOfflineVoiceModels() {
+      try {
+        const payload = await fetchJson("/api/offline-voice/models", { cache: "no-store" });
+        const select = $("offlineModelPreset");
+        select.innerHTML = "";
+        const customOption = document.createElement("option");
+        customOption.value = "";
+        customOption.textContent = "Custom path";
+        select.appendChild(customOption);
+        for (const model of payload.models || []) {
+          const option = document.createElement("option");
+          option.value = model.path;
+          option.textContent = `${model.label}${model.exists ? " | ready" : " | download needed"}`;
+          option.dataset.modelPath = model.path;
+          select.appendChild(option);
+        }
+        const currentPath = $("offlineModelPath").value.trim();
+        const match = Array.from(select.options).find((option) => option.value === currentPath);
+        select.value = match ? currentPath : "";
+      } catch (error) {
+        log(`Offline model list error: ${error.message}`, "warn");
+      }
+    }
+
+    async function syncOfflineVoiceStatus(writeLog = false) {
+      try {
+        const status = await fetchJson("/api/offline-voice/status", { cache: "no-store" });
+        renderOfflineVoiceStatus(status);
+        if (writeLog && status.last_error) {
+          log(`Offline voice: ${status.last_error}`, "warn");
+        }
+      } catch (error) {
+        renderMetricState("voiceState", "voiceDot", "dot", "Unavailable");
+        if (writeLog) {
+          log(`Offline voice error: ${error.message}`, "bad");
+        }
+      }
+    }
+
+    function startOfflineVoicePolling() {
+      if (offlineVoiceTimer) return;
+      offlineVoiceTimer = window.setInterval(() => {
+        syncOfflineVoiceStatus(false).catch(() => {});
+      }, 1000);
+    }
+
+    async function startOfflineVoice() {
+      const payload = {
+        wake_word: $("wakeWordToggle").checked,
+        confirm_estop: $("confirmDangerToggle").checked,
+        noise_gate: Number($("noiseGate").value),
+        model_path: $("offlineModelPath").value.trim(),
+        input_device: $("offlineMicDevice").value.trim(),
+        use_llm: $("offlineUseLlm").checked,
+        ollama_model: $("offlineOllamaModel").value.trim(),
+        ollama_url: $("offlineOllamaUrl").value.trim(),
+      };
+      try {
+        const status = await fetchJson("/api/offline-voice/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        renderOfflineVoiceStatus(status);
+        log("Offline voice started", "ok");
+      } catch (error) {
+        await syncOfflineVoiceStatus(false);
+        log(`Offline voice start failed: ${error.message}`, "bad");
+      }
+    }
+
+    async function stopOfflineVoice() {
+      const status = await fetchJson("/api/offline-voice/stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      renderOfflineVoiceStatus(status);
+      log("Offline voice stopped", "warn");
+    }
+
+    async function calibrateOfflineVoice() {
+      try {
+        const status = await fetchJson("/api/offline-voice/calibrate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ duration_s: 2.2 }),
+        });
+        renderOfflineVoiceStatus(status);
+        log("Offline noise calibration started", "warn");
+      } catch (error) {
+        await syncOfflineVoiceStatus(false);
+        log(`Offline calibration failed: ${error.message}`, "bad");
+      }
+    }
+
+    async function runOfflineVoiceText(text) {
+      try {
+        const status = await fetchJson("/api/offline-voice/text", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        renderOfflineVoiceStatus(status);
+        log(`Voice command ok: ${status.last_command || text}`, "ok");
+      } catch (error) {
+        await syncOfflineVoiceStatus(false);
+        log(`Voice command failed: ${error.message}`, "bad");
+      }
+    }
+
+    function renderCommandHelp() {
+      $("commandList").innerHTML = "";
+      COMMAND_HELP.forEach(([phrase, action]) => {
+        const item = document.createElement("div");
+        item.className = "command-item";
+        item.innerHTML = `<b>${phrase}</b><span>${action}</span>`;
+        $("commandList").appendChild(item);
+      });
+    }
+
+    function updateCameraUi(active, text = null) {
+      $("cameraDot").className = active ? "dot ok" : "dot";
+      $("cameraState").textContent = text || (active ? "Live" : "Off");
+    }
+
+    function setCameraSkeletonText(text) {
+      $("cameraSkeleton").textContent = text;
+    }
+
+    function updateCvLiveUi() {
+      $("btnCvLiveStart").disabled = cvLiveEnabled;
+      $("btnCvLiveStop").disabled = !cvLiveEnabled;
+    }
+
+    function vectorSub(a, b) {
+      return a.map((value, index) => value - b[index]);
+    }
+
+    function vectorDot(a, b) {
+      return a.reduce((sum, value, index) => sum + value * b[index], 0);
+    }
+
+    function vectorNorm(a) {
+      return Math.sqrt(vectorDot(a, a));
+    }
+
+    function vectorCross(a, b) {
+      return [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+      ];
+    }
+
+    function normalizeVector(vector) {
+      const length = vectorNorm(vector);
+      if (length <= 1e-6) return null;
+      return vector.map((value) => value / length);
+    }
+
+    function median(values) {
+      const sorted = [...values].sort((a, b) => a - b);
+      const middle = Math.floor(sorted.length / 2);
+      if (sorted.length % 2) return sorted[middle];
+      return (sorted[middle - 1] + sorted[middle]) * 0.5;
+    }
+
+    function landmarkToArray(landmark, includeZ = true) {
+      return includeZ ? [Number(landmark.x), Number(landmark.y), Number(landmark.z || 0)] : [Number(landmark.x), Number(landmark.y)];
+    }
+
+    function handLocalLandmarks(worldLandmarks) {
+      const points = worldLandmarks.map((landmark) => landmarkToArray(landmark, true));
+      const wrist = points[0];
+      const indexMcp = points[5];
+      const pinkyMcp = points[17];
+      const middleMcp = points[9];
+
+      const xAxis = normalizeVector(vectorSub(indexMcp, pinkyMcp));
+      const ySeed = vectorSub(middleMcp, wrist);
+      if (!xAxis) return points.map((point) => vectorSub(point, wrist));
+
+      let zAxis = normalizeVector(vectorCross(xAxis, ySeed));
+      if (!zAxis) zAxis = normalizeVector(vectorCross(xAxis, vectorSub(indexMcp, wrist)));
+      if (!zAxis) return points.map((point) => vectorSub(point, wrist));
+
+      const yAxis = normalizeVector(vectorCross(zAxis, xAxis));
+      if (!yAxis) return points.map((point) => vectorSub(point, wrist));
+
+      return points.map((point) => {
+        const relative = vectorSub(point, wrist);
+        return [
+          vectorDot(relative, xAxis),
+          vectorDot(relative, yAxis),
+          vectorDot(relative, zAxis),
+        ];
+      });
+    }
+
+    function imageLandmarks2d(landmarks) {
+      return landmarks.map((landmark) => landmarkToArray(landmark, false));
+    }
+
+    function extractPoseLandmarks(imageLandmarks, worldLandmarks) {
+      if (worldLandmarks && worldLandmarks.length === 21) {
+        return [handLocalLandmarks(worldLandmarks), "3D world/local"];
+      }
+      return [imageLandmarks2d(imageLandmarks), "2D image/fallback"];
+    }
+
+    function pointAt(landmarks, index) {
+      return landmarks[index];
+    }
+
+    function angleDegrees(a, b, c) {
+      const ba = vectorSub(a, b);
+      const bc = vectorSub(c, b);
+      const denom = vectorNorm(ba) * vectorNorm(bc);
+      if (denom <= 1e-6) return 180;
+      const cosine = clamp(vectorDot(ba, bc) / denom, -1, 1);
+      return Math.acos(cosine) * 180 / Math.PI;
+    }
+
+    function jointAngleToCloseRatio(angle, openAngle = 170, closedAngle = 75) {
+      return clamp((openAngle - angle) / (openAngle - closedAngle), 0, 1);
+    }
+
+    function fingerCloseRatio(landmarks, mcp, pip, dip, tip) {
+      const pipAngle = angleDegrees(pointAt(landmarks, mcp), pointAt(landmarks, pip), pointAt(landmarks, dip));
+      const dipAngle = angleDegrees(pointAt(landmarks, pip), pointAt(landmarks, dip), pointAt(landmarks, tip));
+      return clamp(0.65 * jointAngleToCloseRatio(pipAngle) + 0.35 * jointAngleToCloseRatio(dipAngle), 0, 1);
+    }
+
+    function thumbCloseRatio(landmarks) {
+      const mcpAngle = angleDegrees(pointAt(landmarks, 1), pointAt(landmarks, 2), pointAt(landmarks, 3));
+      const ipAngle = angleDegrees(pointAt(landmarks, 2), pointAt(landmarks, 3), pointAt(landmarks, 4));
+      return clamp(0.55 * jointAngleToCloseRatio(mcpAngle, 165, 75) + 0.45 * jointAngleToCloseRatio(ipAngle, 165, 75), 0, 1);
+    }
+
+    function thumbOpposeRatio(landmarks) {
+      const wrist = pointAt(landmarks, 0);
+      const indexMcp = pointAt(landmarks, 5);
+      const pinkyMcp = pointAt(landmarks, 17);
+      const thumbTip = pointAt(landmarks, 4);
+      const palmWidth = vectorNorm(vectorSub(indexMcp, pinkyMcp));
+      if (palmWidth <= 1e-6) return 0;
+      const dist = vectorNorm(vectorSub(thumbTip, indexMcp)) / palmWidth;
+      const wristDist = vectorNorm(vectorSub(thumbTip, wrist)) / palmWidth;
+      const closeByIndex = 1 - clamp((dist - 0.45) / (1.25 - 0.45), 0, 1);
+      const closeByWrist = 1 - clamp((wristDist - 0.90) / (1.70 - 0.90), 0, 1);
+      return clamp(0.75 * closeByIndex + 0.25 * closeByWrist, 0, 1);
+    }
+
+    function landmarksToCloseRatios(landmarks) {
+      const thumb = thumbCloseRatio(landmarks);
+      const index = fingerCloseRatio(landmarks, 5, 6, 7, 8);
+      const middle = fingerCloseRatio(landmarks, 9, 10, 11, 12);
+      const ring = fingerCloseRatio(landmarks, 13, 14, 15, 16);
+      const pinky = fingerCloseRatio(landmarks, 17, 18, 19, 20);
+      const oppose = thumbOpposeRatio(landmarks);
+      return [thumb, index, middle, ring, oppose, pinky];
+    }
+
+    function calibrationModeForServo(openValue, midValue, closeValue) {
+      if (closeValue <= openValue + 1e-6) return "bad";
+      if (openValue < midValue && midValue < closeValue) return "3pt";
+      return "2pt";
+    }
+
+    function normalizeCloseRatios(rawRatios, openRatios, midRatios, closeRatios) {
+      return rawRatios.map((rawValue, index) => {
+        const openValue = openRatios[index];
+        const midValue = midRatios[index];
+        const closeValue = closeRatios[index];
+        const mode = calibrationModeForServo(openValue, midValue, closeValue);
+        if (mode === "bad") return clamp(rawValue, 0, 1);
+        if (mode === "2pt") {
+          const span = closeValue - openValue;
+          return Math.abs(span) < 1e-6 ? clamp(rawValue, 0, 1) : clamp((rawValue - openValue) / span, 0, 1);
+        }
+        const lowSpan = midValue - openValue;
+        const highSpan = closeValue - midValue;
+        if (rawValue <= midValue) {
+          return Math.abs(lowSpan) < 1e-6 ? 0.5 : 0.5 * clamp((rawValue - openValue) / lowSpan, 0, 1);
+        }
+        return Math.abs(highSpan) < 1e-6 ? 1 : 0.5 + 0.5 * clamp((rawValue - midValue) / highSpan, 0, 1);
+      }).map((value) => clamp(value, 0, 1));
+    }
+
+    function directDriveRatios(closeRatios) {
+      return closeRatios.map((value, index) => clamp(value / DIRECT_CLOSE_SATURATION[index], 0, 1));
+    }
+
+    function ratiosToAngles(closeRatios) {
+      return closeRatios.map((value, index) => Math.round(OPEN_ANGLE[index] + (CLOSED_ANGLE[index] - OPEN_ANGLE[index]) * clamp(value, 0, 1)));
+    }
+
+    function stabilizeAngles(previousAngles, currentAngles, deadbands) {
+      if (!previousAngles) return currentAngles.map((value) => Math.round(value));
+      return currentAngles.map((value, index) => Math.abs(Math.round(value) - Math.round(previousAngles[index])) <= deadbands[index] ? Math.round(previousAngles[index]) : Math.round(value));
+    }
+
+    function emaAngles(previous, current, alpha) {
+      if (!previous) return current.map((value) => Number(value));
+      return current.map((value, index) => Number(previous[index]) + alpha * (Number(value) - Number(previous[index])));
+    }
+
+    function medianFilterRatios(closeRatios, windowSize = 5) {
+      cvRatioHistory.push(closeRatios.map(Number));
+      while (cvRatioHistory.length > windowSize) cvRatioHistory.shift();
+      return closeRatios.map((_, index) => median(cvRatioHistory.map((sample) => sample[index])));
+    }
+
+    function resetCvState() {
+      cvRatioHistory = [];
+      cvFilteredAngles = null;
+      cvStableAngles = null;
+      cvPoseMetricLabel = "No hand";
+    }
+
+    function applyCvLive(results) {
+      const sendEnabled = $("cvSendToggle").checked;
+      const handLandmarks = results.multiHandLandmarks || [];
+      if (!cvLiveEnabled || !sendEnabled || !handLandmarks.length) return;
+
+      const worldHands = results.multiHandWorldLandmarks || [];
+      const [poseLandmarks, poseMetricLabel] = extractPoseLandmarks(handLandmarks[0], worldHands[0]);
+      cvPoseMetricLabel = poseMetricLabel;
+      const rawCloseRatios = landmarksToCloseRatios(poseLandmarks);
+      const medianRatios = medianFilterRatios(rawCloseRatios, 5);
+      const normalizedRatios = normalizeCloseRatios(medianRatios, OPEN_CALIBRATION, MID_CALIBRATION, CLOSE_CALIBRATION);
+      const driveRatios = directDriveRatios(normalizedRatios);
+      const targetAngles = ratiosToAngles(driveRatios);
+      const stableAngles = stabilizeAngles(cvStableAngles, targetAngles, REALTIME_TARGET_DEADBAND_DEG);
+      cvStableAngles = stableAngles;
+      cvFilteredAngles = emaAngles(cvFilteredAngles, stableAngles, EMA_ALPHA);
+      const smoothedAngles = cvFilteredAngles.map((value) => Math.round(value));
+
+      sendCvAngles(smoothedAngles, `CV ${cvPoseMetricLabel}`);
+    }
+
+    function resizeCameraCanvas() {
+      const video = $("cameraVideo");
+      const canvas = $("cameraCanvas");
+      const width = video.videoWidth || video.clientWidth || 640;
+      const height = video.videoHeight || video.clientHeight || 360;
+      if (canvas.width !== width) canvas.width = width;
+      if (canvas.height !== height) canvas.height = height;
+    }
+
+    function clearCameraCanvas() {
+      const canvas = $("cameraCanvas");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawHandSkeleton(results) {
+      resizeCameraCanvas();
+      const canvas = $("cameraCanvas");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const hands = results.multiHandLandmarks || [];
+      if (!hands.length) {
+        setCameraSkeletonText(cvLiveEnabled ? "No hand | CV live" : "No hand");
+        return;
+      }
+
+      for (const landmarks of hands) {
+        if (window.drawConnectors) {
+          window.drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
+            color: "#42f59b",
+            lineWidth: 3,
+          });
+          window.drawLandmarks(ctx, landmarks, {
+            color: "#f8fffb",
+            fillColor: "#0f9f6e",
+            lineWidth: 1,
+            radius: 3,
+          });
+        }
+      }
+
+      const trackingText = `${hands.length} hand${hands.length > 1 ? "s" : ""} tracked`;
+      setCameraSkeletonText(cvLiveEnabled ? `${trackingText} | CV live` : trackingText);
+    }
+
+    function handleHandResults(results) {
+      drawHandSkeleton(results);
+      applyCvLive(results);
+    }
+
+    async function ensureHandTracking() {
+      if (handsDetector) return handsDetector;
+      if (!handsInitPromise) {
+        handsInitPromise = (async () => {
+          if (!window.Hands) {
+            throw new Error("MediaPipe Hands script not loaded. If the laptop is connected to ESP32 AP and has no Internet, the CDN scripts cannot be downloaded.");
+          }
+          const detector = new window.Hands({
+            locateFile: (file) => `vendor/mediapipe/hands/${file}`,
+          });
+          detector.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.6,
+            minTrackingConfidence: 0.55,
+          });
+          detector.onResults(handleHandResults);
+          handsDetector = detector;
+          return detector;
+        })().catch((error) => {
+          handsInitPromise = null;
+          throw error;
+        });
+      }
+      return handsInitPromise;
+    }
+
+    async function enableSkeletonTracking() {
+      try {
+        setCameraSkeletonText("Loading skeleton");
+        await ensureHandTracking();
+        if (cameraStream) {
+          resizeCameraCanvas();
+          startHandTrackingLoop();
+          setCameraSkeletonText(cvLiveEnabled ? "Skeleton ready | CV live" : "Skeleton ready");
+        }
+      } catch (error) {
+        clearCameraCanvas();
+        setCameraSkeletonText("Skeleton unavailable");
+        log(`Skeleton load failed: ${error.message}`, "warn");
+      }
+    }
+
+    function stopHandTrackingLoop() {
+      if (handTrackingTimer) {
+        window.cancelAnimationFrame(handTrackingTimer);
+      }
+      handTrackingTimer = null;
+      latestHandFrameTime = -1;
+    }
+
+    async function processHandTrackingFrame() {
+      if (!cameraStream || !handsDetector) return;
+      const video = $("cameraVideo");
+      if (video.readyState < 2) return;
+      const frameTime = video.currentTime;
+      if (frameTime === latestHandFrameTime) return;
+      latestHandFrameTime = frameTime;
+      await handsDetector.send({ image: video });
+    }
+
+    function startHandTrackingLoop() {
+      stopHandTrackingLoop();
+      const tick = async () => {
+        if (!cameraStream || !handsDetector) return;
+        try {
+          await processHandTrackingFrame();
+        } catch (error) {
+          setCameraSkeletonText("Skeleton error");
+          log(`Skeleton error: ${error.message}`, "warn");
+        }
+        handTrackingTimer = window.requestAnimationFrame(tick);
+      };
+      handTrackingTimer = window.requestAnimationFrame(tick);
+    }
+
+    async function refreshCameraList() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        $("cameraSelect").innerHTML = `<option value="">Browser camera API unavailable</option>`;
+        updateCameraUi(false, "No API");
+        return;
+      }
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter((device) => device.kind === "videoinput");
+      $("cameraSelect").innerHTML = "";
+      if (!cameras.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "No camera found";
+        $("cameraSelect").appendChild(option);
+        return;
+      }
+      cameras.forEach((camera, index) => {
+        const option = document.createElement("option");
+        option.value = camera.deviceId;
+        option.textContent = camera.label || `Camera ${index + 1}`;
+        $("cameraSelect").appendChild(option);
+      });
+    }
+
+    function selectedCameraConstraints() {
+      const [width, height] = $("cameraQuality").value.split("x").map(Number);
+      const deviceId = $("cameraSelect").value;
+      return {
+        video: {
+          width: { ideal: width },
+          height: { ideal: height },
+          frameRate: { ideal: 30, max: 60 },
+          ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+        },
+        audio: false,
+      };
+    }
+
+    function stopCamera() {
+      if (cameraFpsTimer) window.clearInterval(cameraFpsTimer);
+      if (cameraFrameTimer && $("cameraVideo").cancelVideoFrameCallback) {
+        $("cameraVideo").cancelVideoFrameCallback(cameraFrameTimer);
+      } else if (cameraFrameTimer) {
+        window.cancelAnimationFrame(cameraFrameTimer);
+      }
+      stopHandTrackingLoop();
+      cameraFpsTimer = null;
+      cameraFrameTimer = null;
+      cameraFrameCount = 0;
+      cameraLastFrameCount = 0;
+      if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop());
+      cameraStream = null;
+      $("cameraVideo").srcObject = null;
+      $("cameraInfo").textContent = "No camera";
+      $("cameraFps").textContent = "0 FPS";
+      setCameraSkeletonText("Skeleton off");
+      resetCvState();
+      clearCameraCanvas();
+      updateCameraUi(false);
+    }
+
+    function countCameraFrame() {
+      if (!cameraStream) return;
+      cameraFrameCount += 1;
+      if ($("cameraVideo").requestVideoFrameCallback) {
+        cameraFrameTimer = $("cameraVideo").requestVideoFrameCallback(countCameraFrame);
+      } else {
+        cameraFrameTimer = window.requestAnimationFrame(countCameraFrame);
+      }
+    }
+
+    async function startCamera() {
+      try {
+        stopCamera();
+        updateCameraUi(false, "Starting");
+        setCameraSkeletonText("Starting camera");
+        cameraStream = await navigator.mediaDevices.getUserMedia(selectedCameraConstraints());
+        $("cameraVideo").srcObject = cameraStream;
+        await $("cameraVideo").play();
+        await refreshCameraList();
+        const track = cameraStream.getVideoTracks()[0];
+        const settings = track ? track.getSettings() : {};
+        $("cameraInfo").textContent = `${settings.width || "?"}x${settings.height || "?"}`;
+        resizeCameraCanvas();
+        updateCameraUi(true);
+        countCameraFrame();
+        await enableSkeletonTracking();
+        cameraFpsTimer = window.setInterval(() => {
+          const fps = cameraFrameCount - cameraLastFrameCount;
+          cameraLastFrameCount = cameraFrameCount;
+          $("cameraFps").textContent = `${fps} FPS`;
+        }, 1000);
+        log("Camera started", "ok");
+      } catch (error) {
+        stopCamera();
+        updateCameraUi(false, "Error");
+        log(`Camera error: ${error.message}`, "bad");
+      }
+    }
+
+    function updateCameraMirror() {
+      $("cameraView").classList.toggle("mirror", $("cameraMirror").checked);
+    }
+
+    async function startCvLive() {
+      if (shouldPreferHttpBridgeForCv()) {
+        $("wsUrl").value = WS_URL_DEFAULT;
+        log(`CV Live switched to local bridge ${WS_URL_DEFAULT} for stable realtime streaming.`, "warn");
+      }
+      if (!connected) {
+        log("CV Live is bringing transport online before streaming servo angles.", "warn");
+        await connect();
+      }
+      cvLiveEnabled = true;
+      resetCvState();
+      disconnectCvTransport(false);
+      const cvTransportOk = await connectCvTransport();
+      updateCvLiveUi();
+      setLastCommand("CV Live enabled");
+      log("CV Live enabled. Skeleton will stream servo angles in realtime.", "ok");
+      if (!cvTransportOk) {
+        log("CV transport is offline. Skeleton can still run, but robot will not follow until CV transport connects.", "bad");
+      }
+      if (!connected) {
+        log("CV Live is on but transport is offline. Check Connect/ARM before expecting robot motion.", "warn");
+      }
+      if (!armed) {
+        log("CV Live is on but robot is DISARMED. Press ARM to let servo commands move the hand.", "warn");
+      }
+      if (!cameraStream) {
+        await startCamera();
+      } else {
+        await enableSkeletonTracking();
+      }
+    }
+
+    function stopCvLive() {
+      cvLiveEnabled = false;
+      resetCvState();
+      disconnectCvTransport(false);
+      updateCvLiveUi();
+      setCameraSkeletonText(cameraStream ? "Skeleton ready" : "Skeleton off");
+      setLastCommand("CV Live disabled");
+      log("CV Live disabled", "warn");
+    }
+
+    function bindEvents() {
+      $("btnConnect").addEventListener("click", (event) => {
+        event.preventDefault();
+        log(`Connect clicked -> ${$("wsUrl").value}`, "warn");
+        connect().catch((error) => {
+          log(`Connect failed: ${error.message}`, "bad");
+          setLastCommand(`Connect failed: ${error.message}`);
+        });
+      });
+      $("simModeToggle").addEventListener("change", (event) => {
+        setSimulationMode(Boolean(event.target.checked)).catch((error) => {
+          log(`Sim mode failed: ${error.message}`, "bad");
+        });
+      });
+      $("btnDisconnect").addEventListener("click", () => disconnect(true));
+      $("btnArm").addEventListener("click", () => sendControl("ARM"));
+      $("btnDisarm").addEventListener("click", () => sendControl("DISARM"));
+      $("btnOpen").addEventListener("click", () => {
+        sendControl("OPEN");
+        currentAngles = [...OPEN_ANGLE];
+        renderServoValues();
+      });
+      $("btnClose").addEventListener("click", () => {
+        sendControl("CLOSE");
+        currentAngles = [...CLOSED_ANGLE];
+        renderServoValues();
+      });
+      $("btnEstop").addEventListener("click", () => sendControl("ESTOP"));
+      $("btnHold").addEventListener("click", () => setLastCommand("HOLD"));
+      $("gripSlider").addEventListener("input", (event) => sendGrip(event.target.value));
+      $("gripNumber").addEventListener("change", (event) => sendGrip(event.target.value));
+      document.querySelectorAll("[data-grip]").forEach((button) => {
+        button.addEventListener("click", () => sendGrip(button.dataset.grip));
+      });
+      $("btnDirectOpen").addEventListener("click", () => sendAngles([...OPEN_ANGLE], "Direct OPEN"));
+      $("btnDirectMid").addEventListener("click", () => sendAngles(anglesFromGrip(50), "Direct MID"));
+      $("btnDirectClose").addEventListener("click", () => sendAngles([...CLOSED_ANGLE], "Direct CLOSE"));
+      $("btnVoiceStart").addEventListener("click", () => {
+        startOfflineVoice().catch((error) => log(`Offline voice start failed: ${error.message}`, "bad"));
+      });
+      $("btnVoiceStop").addEventListener("click", () => {
+        stopOfflineVoice().catch((error) => log(`Offline voice stop failed: ${error.message}`, "bad"));
+      });
+      $("btnCalNoise").addEventListener("click", () => {
+        calibrateOfflineVoice().catch((error) => log(`Offline calibration failed: ${error.message}`, "bad"));
+      });
+      $("offlineModelPreset").addEventListener("change", (event) => {
+        const value = event.target.value || "";
+        if (value) {
+          $("offlineModelPath").value = value;
+        }
+      });
+      $("btnCameraStart").addEventListener("click", startCamera);
+      $("btnCameraStop").addEventListener("click", stopCamera);
+      $("btnCameraRefresh").addEventListener("click", refreshCameraList);
+      $("btnCvLiveStart").addEventListener("click", () => {
+        startCvLive().catch((error) => {
+          log(`CV Live failed: ${error.message}`, "bad");
+          setLastCommand(`CV Live failed: ${error.message}`);
+        });
+      });
+      $("btnCvLiveStop").addEventListener("click", stopCvLive);
+      $("cameraQuality").addEventListener("change", () => {
+        if (cameraStream) startCamera();
+      });
+      $("cameraSelect").addEventListener("change", () => {
+        if (cameraStream) startCamera();
+      });
+      $("cameraMirror").addEventListener("change", updateCameraMirror);
+      $("btnRunText").addEventListener("click", () => {
+        runOfflineVoiceText($("manualVoiceText").value).catch((error) => log(`Offline text failed: ${error.message}`, "bad"));
+      });
+      $("manualVoiceText").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          runOfflineVoiceText($("manualVoiceText").value).catch((error) => log(`Offline text failed: ${error.message}`, "bad"));
+        }
+      });
+      window.addEventListener("keydown", (event) => {
+        if (event.code === "Space" && !event.repeat && document.activeElement.tagName !== "INPUT") {
+          event.preventDefault();
+          startOfflineVoice().catch((error) => log(`Offline voice start failed: ${error.message}`, "bad"));
+        }
+      });
+      window.addEventListener("keyup", (event) => {
+        if (event.code === "Space" && document.activeElement.tagName !== "INPUT") {
+          event.preventDefault();
+        }
+      });
+    }
+
+    renderServoControls();
+    renderServoValues();
+    renderCommandHelp();
+    bindEvents();
+    updateCameraMirror();
+    updateCvLiveUi();
+    startBridgeStatusPolling();
+    startOfflineVoicePolling();
+    syncBridgeStatus(false, false).catch(() => {});
+    loadOfflineVoiceDevices().catch((error) => log(`Offline device init error: ${error.message}`, "warn"));
+    loadOfflineVoiceModels().catch((error) => log(`Offline model init error: ${error.message}`, "warn"));
+    syncOfflineVoiceStatus(false).catch(() => {});
+    refreshCameraList().catch((error) => log(`Camera list error: ${error.message}`, "warn"));
+    updateConnectionUi();
+    log("Master UI ready", "ok");
+  </script>
+</body>
+</html>
